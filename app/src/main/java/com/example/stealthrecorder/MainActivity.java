@@ -79,31 +79,35 @@ public class MainActivity extends Activity {
         recordButton.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                String savePath;
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                    savePath = "内部存储/Android/data/com.example.stealthrecorder/files/Documents/Notes/";
+                String message = "📝 笔记助手使用说明：\n\n";
+                message += "• 点击按钮开始/停止记录\n";
+                message += "• 文件保存位置：\n";
+                
+                if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.Q) {
+                    message += "   内部存储/Music/Notes/\n";
+                    message += "   （应用卸载时文件保留）";
                 } else {
-                    savePath = "内部存储/Notes/";
+                    message += "   内部存储/Android/data/com.example.stealthrecorder/files/Documents/Notes/\n";
+                    message += "   ⚠️ 重要：应用卸载时会删除文件！\n";
+                    message += "   请定期备份重要录音文件。";
                 }
-                Toast.makeText(MainActivity.this, 
-                    "点击开始/停止记录\n文件保存在:\n" + savePath, 
-                    Toast.LENGTH_LONG).show();
+                
+                Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
                 return true;
             }
         });
     }
     
     private void checkAndRequestPermissions() {
-        // 只检查录音权限（必须）
+        // 检查录音权限（必须）
         if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) 
                 != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{android.Manifest.permission.RECORD_AUDIO}, 
                     REQUEST_RECORD_AUDIO_PERMISSION);
         }
         
-        // 对于Android 12及以下（API 31及以下），请求存储权限（可选）
-        // Android 13（API 33）开始有更严格的存储权限管理
-        if (android.os.Build.VERSION.SDK_INT <= 32) {  // Android 12L是API 32
+        // 对于Android 9及以下（API 28及以下），请求存储权限（用于公共目录）
+        if (android.os.Build.VERSION.SDK_INT <= android.os.Build.VERSION_CODES.P) {
             if (checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) 
                     != PackageManager.PERMISSION_GRANTED) {
                 requestPermissions(new String[]{
@@ -119,20 +123,39 @@ public class MainActivity extends Activity {
             String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
             String fileName = "Note_" + timeStamp + ".m4a";
             
-            // 保存到应用私有目录
-            File recordsDir = new File(getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "Notes");
+            File recordsDir;
+            String storageType = "公共目录";
+            
+            // 尝试保存到公共目录（应用卸载时不会删除）
+            // 优先尝试：内部存储/Music/Notes/（音乐目录通常可访问）
+            if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.Q) {
+                // Android 9及以下：可以直接访问外部存储
+                recordsDir = new File(Environment.getExternalStoragePublicDirectory(
+                    Environment.DIRECTORY_MUSIC), "Notes");
+                storageType = "公共音乐目录";
+            } else {
+                // Android 10+：尝试使用MediaStore或回退到应用私有目录
+                // 先尝试应用私有目录，但我们会提示用户手动备份
+                recordsDir = new File(getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "Notes");
+                storageType = "应用私有目录（请定期备份）";
+            }
             
             if (!recordsDir.exists()) {
                 boolean created = recordsDir.mkdirs();
                 if (!created) {
-                    Toast.makeText(this, "无法创建目录", Toast.LENGTH_SHORT).show();
-                    return;
+                    // 如果公共目录创建失败，回退到应用私有目录
+                    recordsDir = new File(getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "Notes");
+                    storageType = "应用私有目录（回退方案）";
+                    if (!recordsDir.mkdirs()) {
+                        Toast.makeText(this, "无法创建任何目录", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
                 }
             }
             
             // 检查目录是否可写
             if (!recordsDir.canWrite()) {
-                Toast.makeText(this, "目录不可写，请检查权限", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "目录不可写，请检查存储权限", Toast.LENGTH_LONG).show();
                 return;
             }
             
@@ -140,6 +163,7 @@ public class MainActivity extends Activity {
             
             // 调试信息
             Log.d("StealthRecorder", "开始录音，文件路径: " + outputFile);
+            Log.d("StealthRecorder", "存储类型: " + storageType);
             Log.d("StealthRecorder", "目录可写: " + recordsDir.canWrite());
             Log.d("StealthRecorder", "目录路径: " + recordsDir.getAbsolutePath());
             
@@ -186,7 +210,7 @@ public class MainActivity extends Activity {
             statusText.setText("🔴 记录中...");
             timerText.setVisibility(View.VISIBLE);
             timerText.setText("00:00");
-            fileInfoText.setText("文件: " + fileName);
+            fileInfoText.setText("文件: " + fileName + "\n位置: " + storageType);
             
             // 动态改变按钮背景为录音状态
             recordButton.setBackgroundResource(R.drawable.record_button_recording);
@@ -248,9 +272,19 @@ public class MainActivity extends Activity {
                 
                 // 显示保存信息
                 String fileName = new File(outputFile).getName();
-                Toast.makeText(this, 
-                    "笔记已保存: " + fileName, 
-                    Toast.LENGTH_LONG).show();
+                String parentDir = new File(outputFile).getParent();
+                String message = "✅ 笔记已保存: " + fileName + "\n";
+                
+                // 根据Android版本给出不同的提示
+                if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.Q) {
+                    message += "位置: 内部存储/Music/Notes/\n";
+                    message += "（应用卸载时文件保留）";
+                } else {
+                    message += "位置: 应用私有目录\n";
+                    message += "⚠️ 重要录音请及时备份！";
+                }
+                
+                Toast.makeText(this, message, Toast.LENGTH_LONG).show();
                 
             } catch (RuntimeException e) {
                 Log.e("StealthRecorder", "停止录音失败: " + e.getMessage(), e);
