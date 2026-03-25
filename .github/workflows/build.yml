@@ -30,6 +30,11 @@ jobs:
         yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
         echo "Android SDK licenses accepted"
     
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
+      with:
+        gradle-version: '8.5'
+    
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
     
@@ -42,17 +47,11 @@ jobs:
         echo "=== 当前目录 ==="
         pwd && ls -la
     
-    - name: Build with Gradle (with debug)
+    - name: Build with Gradle
       run: |
         echo "=== 开始构建 ==="
-        # 尝试使用gradle wrapper
-        if [ -f "gradlew" ]; then
-            echo "使用gradlew构建..."
-            ./gradlew assembleDebug --stacktrace --info
-        else
-            echo "gradlew不存在，使用系统gradle..."
-            gradle assembleDebug --stacktrace --info
-        fi
+        # 使用gradle命令（由setup-gradle动作提供）
+        gradle assembleDebug --stacktrace --info
         echo "=== 构建完成 ==="
     
     - name: Debug - Find APK files
