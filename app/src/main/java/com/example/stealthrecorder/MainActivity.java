@@ -78,8 +78,14 @@ public class MainActivity extends Activity {
         recordButton.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
+                String savePath;
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                    savePath = "内部存储/Android/data/com.example.stealthrecorder/files/Documents/Notes/";
+                } else {
+                    savePath = "内部存储/Notes/";
+                }
                 Toast.makeText(MainActivity.this, 
-                    "点击开始/停止录音\n文件保存在: /Records/", 
+                    "点击开始/停止记录\n文件保存在:\n" + savePath, 
                     Toast.LENGTH_LONG).show();
                 return true;
             }
@@ -87,20 +93,21 @@ public class MainActivity extends Activity {
     }
     
     private void checkAndRequestPermissions() {
-        // 检查录音权限
+        // 只检查录音权限（必须）
         if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) 
                 != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{android.Manifest.permission.RECORD_AUDIO}, 
                     REQUEST_RECORD_AUDIO_PERMISSION);
         }
         
-        // 检查存储权限（Android 10+需要）
-        if (checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) 
-                != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[]{
-                android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                android.Manifest.permission.READ_EXTERNAL_STORAGE
-            }, REQUEST_STORAGE_PERMISSION);
+        // 对于Android 12及以下，请求存储权限（可选）
+        if (android.os.Build.VERSION.SDK_INT <= android.os.Build.VERSION_CODES.S_V2) {
+            if (checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) 
+                    != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{
+                    android.Manifest.permission.WRITE_EXTERNAL_STORAGE
+                }, REQUEST_STORAGE_PERMISSION);
+            }
         }
     }
     
@@ -108,10 +115,19 @@ public class MainActivity extends Activity {
         try {
             // 创建输出文件
             String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
-            String fileName = "Recording_" + timeStamp + ".mp3";
+            String fileName = "Note_" + timeStamp + ".m4a";  // 改为.m4a格式，更常见
             
-            // 创建 /Records 目录（在外部存储根目录）
-            File recordsDir = new File(Environment.getExternalStorageDirectory(), "Records");
+            // 方案A：保存到应用私有目录（Documents子目录，用户可访问）
+            File recordsDir;
+            
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                // Android 10+：使用MediaStore或应用私有目录
+                recordsDir = new File(getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "Notes");
+            } else {
+                // Android 9及以下：尝试外部存储
+                recordsDir = new File(Environment.getExternalStorageDirectory(), "Notes");
+            }
+            
             if (!recordsDir.exists()) {
                 recordsDir.mkdirs();
             }
@@ -137,7 +153,7 @@ public class MainActivity extends Activity {
             statusText.setText("🔴 记录中...");
             timerText.setVisibility(View.VISIBLE);
             timerText.setText("00:00");
-            fileInfoText.setText("保存到: " + fileName);
+            fileInfoText.setText("文件: " + fileName);
             
             // 动态改变按钮颜色为红色
             GradientDrawable drawable = (GradientDrawable) recordButton.getBackground();
@@ -173,7 +189,7 @@ public class MainActivity extends Activity {
                 recordButton.setText("● 开始记录");
                 statusText.setText("🟢 记录已保存");
                 timerText.setVisibility(View.GONE);
-                fileInfoText.setText("文件位置: /Records/");
+                fileInfoText.setText("文件已保存到笔记");
                 
                 // 恢复按钮颜色为绿色
                 GradientDrawable drawable = (GradientDrawable) recordButton.getBackground();
@@ -181,8 +197,9 @@ public class MainActivity extends Activity {
                 
                 // 显示保存信息
                 String fileName = new File(outputFile).getName();
+                String savePath = new File(outputFile).getParent();
                 Toast.makeText(this, 
-                    "记录已保存: " + fileName + "\n位置: /Records/", 
+                    "笔记已保存: " + fileName + "\n可在文件管理器中查看", 
                     Toast.LENGTH_LONG).show();
                 
             } catch (RuntimeException e) {

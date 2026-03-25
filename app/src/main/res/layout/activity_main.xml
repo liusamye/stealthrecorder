@@ -84,7 +84,7 @@
             android:id="@+id/fileInfoText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="文件将保存到: /Records/"
+            android:text="文件将保存到笔记目录"
             android:textSize="14sp"
             android:textColor="#666666"
             android:layout_marginTop="8dp" />
@@ -93,7 +93,7 @@
             android:id="@+id/hintText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="💡 长按按钮可查看使用说明"
+            android:text="💡 长按按钮查看保存位置"
             android:textSize="12sp"
             android:textColor="#999999"
             android:layout_marginTop="12dp" />
