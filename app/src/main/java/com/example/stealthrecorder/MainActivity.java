@@ -26,6 +26,7 @@ public class MainActivity extends Activity {
     
     private static final int REQUEST_RECORD_AUDIO_PERMISSION = 200;
     private static final int REQUEST_STORAGE_PERMISSION = 201;
+    private static final int REQUEST_MANAGE_EXTERNAL_STORAGE = 202;
     private MediaRecorder mediaRecorder = null;
     private boolean isRecording = false;
     private long startTime = 0;
@@ -89,13 +90,24 @@ public class MainActivity extends Activity {
                 message += "• 点击按钮开始/停止记录\n";
                 message += "• 文件保存位置：\n";
                 
-                if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.Q) {
-                    message += "   内部存储/Music/Notes/\n";
-                    message += "   （应用卸载时文件保留）";
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                    // Android 11+
+                    if (Environment.isExternalStorageManager()) {
+                        message += "   内部存储/Recordings/\n";
+                        message += "   ✅ 根目录，应用卸载时文件保留";
+                    } else {
+                        message += "   需要文件管理权限\n";
+                        message += "   ⚠️ 首次录音时会提示授权\n";
+                        message += "   授权后可保存到根目录";
+                    }
+                } else if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                    // Android 10
+                    message += "   应用私有目录\n";
+                    message += "   ⚠️ 应用卸载时会删除文件！";
                 } else {
-                    message += "   内部存储/Android/data/com.example.stealthrecorder/files/Documents/Notes/\n";
-                    message += "   ⚠️ 重要：应用卸载时会删除文件！\n";
-                    message += "   请定期备份重要录音文件。";
+                    // Android 9及以下
+                    message += "   内部存储/Recordings/\n";
+                    message += "   ✅ 根目录，应用卸载时文件保留";
                 }
                 
                 message += "\n\n• 点击📁按钮直接打开文件夹";
@@ -125,13 +137,21 @@ public class MainActivity extends Activity {
                     REQUEST_RECORD_AUDIO_PERMISSION);
         }
         
-        // 对于Android 9及以下（API 28及以下），请求存储权限（用于公共目录）
-        if (android.os.Build.VERSION.SDK_INT <= android.os.Build.VERSION_CODES.P) {
+        // 对于Android 10（API 29），请求存储权限
+        if (android.os.Build.VERSION.SDK_INT == android.os.Build.VERSION_CODES.Q) {
             if (checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) 
                     != PackageManager.PERMISSION_GRANTED) {
                 requestPermissions(new String[]{
                     android.Manifest.permission.WRITE_EXTERNAL_STORAGE
                 }, REQUEST_STORAGE_PERMISSION);
+            }
+        }
+        
+        // 对于Android 11+，检查是否有管理所有文件的权限
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            if (!Environment.isExternalStorageManager()) {
+                // 不在这里请求，在用户尝试录音时再请求
+                Log.d("StealthRecorder", "需要文件管理权限");
             }
         }
     }
@@ -143,32 +163,39 @@ public class MainActivity extends Activity {
             String fileName = "Note_" + timeStamp + ".m4a";
             
             File recordsDir;
-            String storageType = "公共目录";
+            String storageType = "根目录";
             
-            // 尝试保存到公共目录（应用卸载时不会删除）
-            // 优先尝试：内部存储/Music/Notes/（音乐目录通常可访问）
-            if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.Q) {
-                // Android 9及以下：可以直接访问外部存储
-                recordsDir = new File(Environment.getExternalStoragePublicDirectory(
-                    Environment.DIRECTORY_MUSIC), "Notes");
-                storageType = "公共音乐目录";
-            } else {
-                // Android 10+：尝试使用MediaStore或回退到应用私有目录
-                // 先尝试应用私有目录，但我们会提示用户手动备份
+            // 优先尝试：保存到根目录简单路径
+            // 路径：内部存储/Recordings/
+            recordsDir = new File(Environment.getExternalStorageDirectory(), "Recordings");
+            
+            // 检查是否有权限写入根目录
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                // Android 11+ 需要特殊权限
+                if (!Environment.isExternalStorageManager()) {
+                    storageType = "应用私有目录（需要授权）";
+                    recordsDir = new File(getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "Notes");
+                    
+                    // 提示用户授权
+                    Toast.makeText(this, 
+                        "需要文件管理权限保存到根目录\n请点击确定授权", 
+                        Toast.LENGTH_LONG).show();
+                    
+                    // 跳转到设置页面请求权限
+                    requestManageExternalStoragePermission();
+                }
+            } else if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                // Android 10：使用应用私有目录
+                storageType = "应用私有目录";
                 recordsDir = new File(getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "Notes");
-                storageType = "应用私有目录（请定期备份）";
             }
+            // Android 9及以下：可以直接写入根目录
             
             if (!recordsDir.exists()) {
                 boolean created = recordsDir.mkdirs();
                 if (!created) {
-                    // 如果公共目录创建失败，回退到应用私有目录
-                    recordsDir = new File(getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "Notes");
-                    storageType = "应用私有目录（回退方案）";
-                    if (!recordsDir.mkdirs()) {
-                        Toast.makeText(this, "无法创建任何目录", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
+                    Toast.makeText(this, "无法创建目录: " + recordsDir.getAbsolutePath(), Toast.LENGTH_SHORT).show();
+                    return;
                 }
             }
             
@@ -298,13 +325,19 @@ public class MainActivity extends Activity {
                 String parentDir = new File(outputFile).getParent();
                 String message = "✅ 笔记已保存: " + fileName + "\n";
                 
-                // 根据Android版本给出不同的提示
-                if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.Q) {
-                    message += "位置: 内部存储/Music/Notes/\n";
-                    message += "（应用卸载时文件保留）";
-                } else {
+                // 根据存储位置给出不同的提示
+                if (parentDir.contains("Recordings")) {
+                    message += "位置: 内部存储/Recordings/\n";
+                    message += "✅ 根目录，安全保存";
+                } else if (parentDir.contains("Android/data")) {
                     message += "位置: 应用私有目录\n";
-                    message += "⚠️ 重要录音请及时备份！";
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                        message += "⚠️ 需要文件管理权限保存到根目录";
+                    } else {
+                        message += "⚠️ 应用卸载时会删除文件！";
+                    }
+                } else {
+                    message += "位置: " + parentDir + "\n";
                 }
                 
                 Toast.makeText(this, message, Toast.LENGTH_LONG).show();
@@ -385,19 +418,60 @@ public class MainActivity extends Activity {
     }
     
     /**
+     * 请求管理所有文件的特殊权限（Android 11+）
+     */
+    private void requestManageExternalStoragePermission() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            try {
+                Intent intent = new Intent(android.provider.Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+                intent.setData(Uri.parse("package:" + getPackageName()));
+                startActivityForResult(intent, REQUEST_MANAGE_EXTERNAL_STORAGE);
+            } catch (Exception e) {
+                // 回退方案：打开应用信息页面
+                Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                intent.setData(Uri.parse("package:" + getPackageName()));
+                startActivity(intent);
+                
+                Toast.makeText(this, 
+                    "请手动开启'允许管理所有文件'权限", 
+                    Toast.LENGTH_LONG).show();
+            }
+        }
+    }
+    
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        
+        if (requestCode == REQUEST_MANAGE_EXTERNAL_STORAGE) {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                if (Environment.isExternalStorageManager()) {
+                    Toast.makeText(this, "文件管理权限已授权", Toast.LENGTH_SHORT).show();
+                    // 可以重新尝试录音
+                } else {
+                    Toast.makeText(this, "文件管理权限被拒绝", Toast.LENGTH_SHORT).show();
+                }
+            }
+        }
+    }
+    
+    /**
      * 检查是否已有录音文件夹
      */
     private void checkExistingRecordsFolder() {
-        File recordsDir;
+        // 优先检查根目录的Recordings文件夹
+        File recordsDir = new File(Environment.getExternalStorageDirectory(), "Recordings");
         
-        // 根据Android版本确定可能的文件夹位置
-        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.Q) {
-            // Android 9及以下：公共音乐目录
-            recordsDir = new File(Environment.getExternalStoragePublicDirectory(
-                Environment.DIRECTORY_MUSIC), "Notes");
-        } else {
-            // Android 10+：应用私有目录
-            recordsDir = new File(getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "Notes");
+        if (!recordsDir.exists() || !recordsDir.isDirectory()) {
+            // 检查旧版本的可能位置
+            if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.Q) {
+                // Android 9及以下：公共音乐目录
+                recordsDir = new File(Environment.getExternalStoragePublicDirectory(
+                    Environment.DIRECTORY_MUSIC), "Notes");
+            } else {
+                // Android 10+：应用私有目录
+                recordsDir = new File(getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "Notes");
+            }
         }
         
         // 检查文件夹是否存在且有文件

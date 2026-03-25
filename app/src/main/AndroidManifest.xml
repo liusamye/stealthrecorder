@@ -4,17 +4,35 @@
 
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     
-    <!-- 对于Android 9及以下，需要存储权限访问公共目录 -->
+    <!-- 特殊权限：管理所有文件（Android 11+） -->
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
+        tools:ignore="ScopedStorage" />
+    
+    <!-- 对于Android 10，需要存储权限 -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-        android:maxSdkVersion="28" />
+        android:maxSdkVersion="29" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
-        android:maxSdkVersion="28" />
+        android:maxSdkVersion="29" />
     
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="语音备忘录"
-        android:theme="@android:style/Theme.Light">
+        android:theme="@android:style/Theme.Light"
+        android:requestLegacyExternalStorage="true">
+        
+        <!-- 添加查询所有文件的权限 -->
+        <queries>
+            <intent>
+                <action android:name="android.intent.action.VIEW" />
+                <data android:mimeType="*/*" />
+            </intent>
+            <intent>
+                <action android:name="android.intent.action.GET_CONTENT" />
+                <data android:mimeType="*/*" />
+            </intent>
+        </queries>
+        
         <activity
             android:name=".MainActivity"
             android:exported="true">
