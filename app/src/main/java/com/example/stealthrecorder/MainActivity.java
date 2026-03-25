@@ -188,9 +188,9 @@ public class MainActivity extends Activity {
             timerText.setText("00:00");
             fileInfoText.setText("文件: " + fileName);
             
-            // 动态改变按钮颜色为红色
-            GradientDrawable drawable = (GradientDrawable) recordButton.getBackground();
-            drawable.setColor(0xFFF44336); // 红色
+            // 动态改变按钮背景为录音状态
+            recordButton.setBackgroundResource(R.drawable.record_button_recording);
+            Log.d("StealthRecorder", "按钮背景已设置为录音状态");
             
             // 只使用低 profile 模式，不隐藏状态栏和导航栏
             getWindow().getDecorView().setSystemUiVisibility(
@@ -242,9 +242,9 @@ public class MainActivity extends Activity {
                 timerText.setVisibility(View.GONE);
                 fileInfoText.setText("文件已保存到笔记");
                 
-                // 恢复按钮颜色为绿色
-                GradientDrawable drawable = (GradientDrawable) recordButton.getBackground();
-                drawable.setColor(0xFF4CAF50); // 绿色
+                // 恢复按钮背景为正常状态
+                recordButton.setBackgroundResource(R.drawable.record_button_bg);
+                Log.d("StealthRecorder", "按钮背景已恢复为正常状态");
                 
                 // 显示保存信息
                 String fileName = new File(outputFile).getName();
