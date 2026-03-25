@@ -7,6 +7,7 @@ import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -116,35 +117,66 @@ public class MainActivity extends Activity {
         try {
             // 创建输出文件
             String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
-            String fileName = "Note_" + timeStamp + ".m4a";  // 改为.m4a格式，更常见
+            String fileName = "Note_" + timeStamp + ".m4a";
             
-            // 方案A：保存到应用私有目录（Documents子目录，用户可访问）
-            File recordsDir;
-            
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                // Android 10+：使用MediaStore或应用私有目录
-                recordsDir = new File(getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "Notes");
-            } else {
-                // Android 9及以下：尝试外部存储
-                recordsDir = new File(Environment.getExternalStorageDirectory(), "Notes");
-            }
+            // 保存到应用私有目录
+            File recordsDir = new File(getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "Notes");
             
             if (!recordsDir.exists()) {
-                recordsDir.mkdirs();
+                boolean created = recordsDir.mkdirs();
+                if (!created) {
+                    Toast.makeText(this, "无法创建目录", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+            }
+            
+            // 检查目录是否可写
+            if (!recordsDir.canWrite()) {
+                Toast.makeText(this, "目录不可写，请检查权限", Toast.LENGTH_LONG).show();
+                return;
             }
             
             outputFile = new File(recordsDir, fileName).getAbsolutePath();
             
+            // 调试信息
+            Log.d("StealthRecorder", "开始录音，文件路径: " + outputFile);
+            Log.d("StealthRecorder", "目录可写: " + recordsDir.canWrite());
+            Log.d("StealthRecorder", "目录路径: " + recordsDir.getAbsolutePath());
+            
             mediaRecorder = new MediaRecorder();
             mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+            
+            // 使用更兼容的设置
             mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
             mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
-            mediaRecorder.setAudioEncodingBitRate(128000);
-            mediaRecorder.setAudioSamplingRate(44100);
+            
+            // 降低质量以提高兼容性
+            mediaRecorder.setAudioEncodingBitRate(64000);  // 从128k降低到64k
+            mediaRecorder.setAudioSamplingRate(22050);     // 从44.1k降低到22.05k
+            
             mediaRecorder.setOutputFile(outputFile);
             
-            mediaRecorder.prepare();
-            mediaRecorder.start();
+            // 准备录音
+            try {
+                mediaRecorder.prepare();
+            } catch (IOException e) {
+                Log.e("StealthRecorder", "准备录音失败: " + e.getMessage(), e);
+                Toast.makeText(this, "准备录音失败: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                mediaRecorder.release();
+                mediaRecorder = null;
+                return;
+            }
+            
+            // 开始录音
+            try {
+                mediaRecorder.start();
+            } catch (IllegalStateException e) {
+                Log.e("StealthRecorder", "开始录音失败: " + e.getMessage(), e);
+                Toast.makeText(this, "开始录音失败，请重试", Toast.LENGTH_LONG).show();
+                mediaRecorder.release();
+                mediaRecorder = null;
+                return;
+            }
             
             isRecording = true;
             startTime = System.currentTimeMillis();
@@ -167,12 +199,15 @@ public class MainActivity extends Activity {
             // 启动计时器
             timerHandler.postDelayed(timerRunnable, 1000);
             
-        } catch (IOException e) {
-            e.printStackTrace();
-            Toast.makeText(this, "记录启动失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-        } catch (SecurityException e) {
-            e.printStackTrace();
-            Toast.makeText(this, "权限被拒绝，请检查应用权限设置", Toast.LENGTH_LONG).show();
+            Log.d("StealthRecorder", "录音已成功开始");
+            
+        } catch (Exception e) {
+            Log.e("StealthRecorder", "录音启动异常: " + e.getMessage(), e);
+            Toast.makeText(this, "录音启动异常: " + e.getClass().getSimpleName(), Toast.LENGTH_LONG).show();
+            if (mediaRecorder != null) {
+                mediaRecorder.release();
+                mediaRecorder = null;
+            }
         }
     }
     
@@ -180,6 +215,21 @@ public class MainActivity extends Activity {
         if (mediaRecorder != null) {
             try {
                 mediaRecorder.stop();
+                
+                // 检查文件是否创建成功
+                File recordedFile = new File(outputFile);
+                if (recordedFile.exists()) {
+                    long fileSize = recordedFile.length();
+                    Log.d("StealthRecorder", "录音文件已保存，大小: " + fileSize + " 字节");
+                    
+                    if (fileSize < 1024) { // 小于1KB可能是空的
+                        Toast.makeText(this, "录音文件可能为空 (" + fileSize + "字节)", Toast.LENGTH_LONG).show();
+                    }
+                } else {
+                    Log.w("StealthRecorder", "录音文件未创建: " + outputFile);
+                    Toast.makeText(this, "录音文件未创建", Toast.LENGTH_LONG).show();
+                }
+                
                 mediaRecorder.release();
                 mediaRecorder = null;
                 
@@ -198,14 +248,21 @@ public class MainActivity extends Activity {
                 
                 // 显示保存信息
                 String fileName = new File(outputFile).getName();
-                String savePath = new File(outputFile).getParent();
                 Toast.makeText(this, 
-                    "笔记已保存: " + fileName + "\n可在文件管理器中查看", 
+                    "笔记已保存: " + fileName, 
                     Toast.LENGTH_LONG).show();
                 
             } catch (RuntimeException e) {
-                e.printStackTrace();
-                Toast.makeText(this, "记录停止失败", Toast.LENGTH_SHORT).show();
+                Log.e("StealthRecorder", "停止录音失败: " + e.getMessage(), e);
+                Toast.makeText(this, "停止录音失败: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                
+                // 即使停止失败也要释放资源
+                try {
+                    mediaRecorder.release();
+                } catch (Exception ex) {
+                    Log.e("StealthRecorder", "释放MediaRecorder失败", ex);
+                }
+                mediaRecorder = null;
             }
         }
     }
