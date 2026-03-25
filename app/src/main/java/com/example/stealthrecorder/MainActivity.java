@@ -100,8 +100,9 @@ public class MainActivity extends Activity {
                     REQUEST_RECORD_AUDIO_PERMISSION);
         }
         
-        // 对于Android 12及以下，请求存储权限（可选）
-        if (android.os.Build.VERSION.SDK_INT <= android.os.Build.VERSION_CODES.S_V2) {
+        // 对于Android 12及以下（API 31及以下），请求存储权限（可选）
+        // Android 13（API 33）开始有更严格的存储权限管理
+        if (android.os.Build.VERSION.SDK_INT <= 32) {  // Android 12L是API 32
             if (checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) 
                     != PackageManager.PERMISSION_GRANTED) {
                 requestPermissions(new String[]{
