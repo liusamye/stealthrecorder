@@ -1,10 +1,6 @@
 package com.example.stealthrecorder;
 
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-
-import android.Manifest;
+import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.media.MediaRecorder;
 import android.os.Bundle;
@@ -20,7 +16,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends Activity {
     
     private static final int REQUEST_RECORD_AUDIO_PERMISSION = 200;
     private MediaRecorder mediaRecorder = null;
@@ -39,11 +35,10 @@ public class MainActivity extends AppCompatActivity {
         recordButton = findViewById(R.id.recordButton);
         statusText = findViewById(R.id.statusText);
         
-        // 检查权限
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) 
+        // 检查权限（原生API）
+        if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) 
                 != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, 
-                    new String[]{Manifest.permission.RECORD_AUDIO}, 
+            requestPermissions(new String[]{android.Manifest.permission.RECORD_AUDIO}, 
                     REQUEST_RECORD_AUDIO_PERMISSION);
         }
         

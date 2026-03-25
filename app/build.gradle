@@ -4,22 +4,20 @@ plugins {
 
 android {
     namespace 'com.example.stealthrecorder'
-    compileSdk 33  // 降低到33，更稳定
+    compileSdk 30  // 使用更旧的SDK 30，最稳定
 
     defaultConfig {
         applicationId "com.example.stealthrecorder"
-        minSdk 21  // 降低到Android 5.0，提高兼容性
-        targetSdk 33  // 也降低到33
+        minSdk 16  // 最低支持Android 4.1，最大化兼容性
+        targetSdk 30
         versionCode 1
         versionName "1.0"
-
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
         release {
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
     compileOptions {
@@ -29,10 +27,6 @@ android {
 }
 
 dependencies {
-    // 最小化依赖 - 只保留绝对必要的
-    implementation 'androidx.appcompat:appcompat:1.5.1'
-    
-    testImplementation 'junit:junit:4.13.2'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+    // 零依赖！纯原生Android
+    // 不需要任何AndroidX或第三方库
 }
