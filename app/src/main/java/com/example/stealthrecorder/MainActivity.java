@@ -1,12 +1,15 @@
 package com.example.stealthrecorder;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.GradientDrawable;
 import android.media.MediaRecorder;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
+import android.provider.DocumentsContract;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -29,11 +32,13 @@ public class MainActivity extends Activity {
     private Handler timerHandler = new Handler();
     
     private Button recordButton;
+    private Button openFolderButton;
     private TextView statusText;
     private TextView timerText;
     private TextView fileInfoText;
     
     private String outputFile;
+    private File currentRecordsDir; // 当前录音文件目录
     
     // 计时器任务
     private Runnable timerRunnable = new Runnable() {
@@ -57,6 +62,7 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         
         recordButton = findViewById(R.id.recordButton);
+        openFolderButton = findViewById(R.id.openFolderButton);
         statusText = findViewById(R.id.statusText);
         timerText = findViewById(R.id.timerText);
         fileInfoText = findViewById(R.id.fileInfoText);
@@ -92,10 +98,23 @@ public class MainActivity extends Activity {
                     message += "   请定期备份重要录音文件。";
                 }
                 
+                message += "\n\n• 点击📁按钮直接打开文件夹";
+                
                 Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
                 return true;
             }
         });
+        
+        // 打开文件夹按钮点击事件
+        openFolderButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                openRecordsFolder();
+            }
+        });
+        
+        // 检查是否已有录音文件夹
+        checkExistingRecordsFolder();
     }
     
     private void checkAndRequestPermissions() {
@@ -160,6 +179,10 @@ public class MainActivity extends Activity {
             }
             
             outputFile = new File(recordsDir, fileName).getAbsolutePath();
+            currentRecordsDir = recordsDir; // 保存目录引用
+            
+            // 显示打开文件夹按钮
+            openFolderButton.setVisibility(View.VISIBLE);
             
             // 调试信息
             Log.d("StealthRecorder", "开始录音，文件路径: " + outputFile);
@@ -307,6 +330,84 @@ public class MainActivity extends Activity {
         if (mediaRecorder != null) {
             mediaRecorder.release();
             mediaRecorder = null;
+        }
+    }
+    
+    /**
+     * 打开录音文件夹
+     */
+    private void openRecordsFolder() {
+        if (currentRecordsDir == null || !currentRecordsDir.exists()) {
+            Toast.makeText(this, "录音文件夹不存在或尚未创建", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        try {
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            Uri uri = Uri.fromFile(currentRecordsDir);
+            
+            // 设置URI和类型
+            intent.setDataAndType(uri, "resource/folder");
+            
+            // 对于Android 7.0+，尝试使用更兼容的方式
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                intent = new Intent(Intent.ACTION_GET_CONTENT);
+                intent.setDataAndType(uri, "*/*");
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
+            }
+            
+            // 创建选择器
+            Intent chooser = Intent.createChooser(intent, "选择应用打开录音文件夹");
+            
+            if (intent.resolveActivity(getPackageManager()) != null) {
+                startActivity(chooser);
+            } else {
+                // 回退方案：显示路径
+                showFolderPath();
+            }
+            
+        } catch (Exception e) {
+            Log.e("StealthRecorder", "打开文件夹失败: " + e.getMessage(), e);
+            showFolderPath();
+        }
+    }
+    
+    /**
+     * 显示文件夹路径（回退方案）
+     */
+    private void showFolderPath() {
+        if (currentRecordsDir != null) {
+            String path = currentRecordsDir.getAbsolutePath();
+            Toast.makeText(this, 
+                "请手动打开文件管理器并导航到：\n" + path, 
+                Toast.LENGTH_LONG).show();
+        }
+    }
+    
+    /**
+     * 检查是否已有录音文件夹
+     */
+    private void checkExistingRecordsFolder() {
+        File recordsDir;
+        
+        // 根据Android版本确定可能的文件夹位置
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.Q) {
+            // Android 9及以下：公共音乐目录
+            recordsDir = new File(Environment.getExternalStoragePublicDirectory(
+                Environment.DIRECTORY_MUSIC), "Notes");
+        } else {
+            // Android 10+：应用私有目录
+            recordsDir = new File(getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "Notes");
+        }
+        
+        // 检查文件夹是否存在且有文件
+        if (recordsDir.exists() && recordsDir.isDirectory()) {
+            File[] files = recordsDir.listFiles();
+            if (files != null && files.length > 0) {
+                currentRecordsDir = recordsDir;
+                openFolderButton.setVisibility(View.VISIBLE);
+                Log.d("StealthRecorder", "发现已有录音文件夹，包含 " + files.length + " 个文件");
+            }
         }
     }
 }

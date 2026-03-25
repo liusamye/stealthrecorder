@@ -89,11 +89,23 @@
             android:textColor="#666666"
             android:layout_marginTop="8dp" />
 
+        <!-- 打开文件夹按钮 -->
+        <Button
+            android:id="@+id/openFolderButton"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="📁 打开录音文件夹"
+            android:textSize="16sp"
+            android:textColor="#FFFFFF"
+            android:background="#2196F3"
+            android:layout_marginTop="16dp"
+            android:visibility="gone" />
+
         <TextView
             android:id="@+id/hintText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="💡 长按按钮查看文件安全说明"
+            android:text="💡 长按录音按钮查看详细说明"
             android:textSize="12sp"
             android:textColor="#999999"
             android:layout_marginTop="12dp" />
