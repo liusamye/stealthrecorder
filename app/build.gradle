@@ -8,7 +8,7 @@ android {
 
     defaultConfig {
         applicationId "com.example.stealthrecorder"
-        minSdk 24
+        minSdk 21  # 降低到Android 5.0，提高兼容性
         targetSdk 34
         versionCode 1
         versionName "1.0"
