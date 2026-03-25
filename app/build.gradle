@@ -4,12 +4,12 @@ plugins {
 
 android {
     namespace 'com.example.stealthrecorder'
-    compileSdk 34
+    compileSdk 33  // 降低到33，更稳定
 
     defaultConfig {
         applicationId "com.example.stealthrecorder"
         minSdk 21  // 降低到Android 5.0，提高兼容性
-        targetSdk 34
+        targetSdk 33  // 也降低到33
         versionCode 1
         versionName "1.0"
 
@@ -29,9 +29,8 @@ android {
 }
 
 dependencies {
-    // 最小化依赖，避免冲突
-    implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    // 最小化依赖 - 只保留绝对必要的
+    implementation 'androidx.appcompat:appcompat:1.5.1'
     
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
