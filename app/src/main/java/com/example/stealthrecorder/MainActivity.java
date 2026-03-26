@@ -4,11 +4,13 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.GradientDrawable;
+import android.media.AudioManager;
 import android.media.MediaRecorder;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
+import android.os.PowerManager;
 import android.provider.DocumentsContract;
 import android.util.Log;
 import android.view.View;
@@ -31,6 +33,9 @@ public class MainActivity extends Activity {
     private boolean isRecording = false;
     private long startTime = 0;
     private Handler timerHandler = new Handler();
+    private AudioManager audioManager;
+    private PowerManager.WakeLock wakeLock;
+    private boolean audioFocusGranted = false;
     
     private Button recordButton;
     private Button openFolderButton;
@@ -57,6 +62,48 @@ public class MainActivity extends Activity {
         }
     };
     
+    // 音频焦点变化监听器
+    private AudioManager.OnAudioFocusChangeListener audioFocusChangeListener = 
+        new AudioManager.OnAudioFocusChangeListener() {
+            @Override
+            public void onAudioFocusChange(int focusChange) {
+                switch (focusChange) {
+                    case AudioManager.AUDIOFOCUS_GAIN:
+                        // 重新获得音频焦点，可以恢复录音
+                        Log.d("StealthRecorder", "重新获得音频焦点");
+                        audioFocusGranted = true;
+                        if (isRecording && mediaRecorder != null) {
+                            // 可以尝试恢复录音，但MediaRecorder不支持暂停/恢复
+                            // 所以这里只是更新状态
+                            statusText.setText("🔴 记录中...（焦点恢复）");
+                        }
+                        break;
+                        
+                    case AudioManager.AUDIOFOCUS_LOSS:
+                        // 永久失去音频焦点，应该停止录音
+                        Log.d("StealthRecorder", "永久失去音频焦点");
+                        audioFocusGranted = false;
+                        if (isRecording) {
+                            Toast.makeText(MainActivity.this, 
+                                "其他应用占用了麦克风，录音可能中断", 
+                                Toast.LENGTH_LONG).show();
+                            statusText.setText("⚠️ 记录中（麦克风被占用）");
+                        }
+                        break;
+                        
+                    case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
+                    case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
+                        // 暂时失去音频焦点
+                        Log.d("StealthRecorder", "暂时失去音频焦点");
+                        audioFocusGranted = false;
+                        if (isRecording) {
+                            statusText.setText("⏸️ 记录中（音频焦点暂时丢失）");
+                        }
+                        break;
+                }
+            }
+        };
+    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -67,6 +114,9 @@ public class MainActivity extends Activity {
         statusText = findViewById(R.id.statusText);
         timerText = findViewById(R.id.timerText);
         fileInfoText = findViewById(R.id.fileInfoText);
+        
+        // 初始化音频管理器
+        audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
         
         // 检查权限
         checkAndRequestPermissions();
@@ -208,6 +258,29 @@ public class MainActivity extends Activity {
             outputFile = new File(recordsDir, fileName).getAbsolutePath();
             currentRecordsDir = recordsDir; // 保存目录引用
             
+            // 请求音频焦点
+            int result = audioManager.requestAudioFocus(
+                audioFocusChangeListener,
+                AudioManager.STREAM_MUSIC,
+                AudioManager.AUDIOFOCUS_GAIN);
+            
+            if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                audioFocusGranted = true;
+                Log.d("StealthRecorder", "音频焦点请求成功");
+            } else {
+                audioFocusGranted = false;
+                Log.w("StealthRecorder", "音频焦点请求失败");
+                Toast.makeText(this, "无法获取音频焦点，录音可能受影响", Toast.LENGTH_SHORT).show();
+            }
+            
+            // 获取唤醒锁，防止CPU休眠
+            PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
+            wakeLock = powerManager.newWakeLock(
+                PowerManager.PARTIAL_WAKE_LOCK, 
+                "StealthRecorder::RecordingWakeLock");
+            wakeLock.acquire(30 * 60 * 1000L /*30分钟*/); // 30分钟超时
+            Log.d("StealthRecorder", "唤醒锁已获取");
+            
             // 显示打开文件夹按钮
             openFolderButton.setVisibility(View.VISIBLE);
             
@@ -216,6 +289,7 @@ public class MainActivity extends Activity {
             Log.d("StealthRecorder", "存储类型: " + storageType);
             Log.d("StealthRecorder", "目录可写: " + recordsDir.canWrite());
             Log.d("StealthRecorder", "目录路径: " + recordsDir.getAbsolutePath());
+            Log.d("StealthRecorder", "音频焦点状态: " + (audioFocusGranted ? "已获取" : "未获取"));
             
             mediaRecorder = new MediaRecorder();
             mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
@@ -310,6 +384,20 @@ public class MainActivity extends Activity {
                 isRecording = false;
                 timerHandler.removeCallbacks(timerRunnable);
                 
+                // 释放音频焦点
+                if (audioFocusGranted) {
+                    audioManager.abandonAudioFocus(audioFocusChangeListener);
+                    audioFocusGranted = false;
+                    Log.d("StealthRecorder", "音频焦点已释放");
+                }
+                
+                // 释放唤醒锁
+                if (wakeLock != null && wakeLock.isHeld()) {
+                    wakeLock.release();
+                    wakeLock = null;
+                    Log.d("StealthRecorder", "唤醒锁已释放");
+                }
+                
                 // 更新UI
                 recordButton.setText("● 开始记录");
                 statusText.setText("🟢 记录已保存");
@@ -360,10 +448,35 @@ public class MainActivity extends Activity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        
+        // 如果还在录音，先停止
+        if (isRecording && mediaRecorder != null) {
+            try {
+                mediaRecorder.stop();
+            } catch (Exception e) {
+                Log.e("StealthRecorder", "停止录音失败: " + e.getMessage());
+            }
+        }
+        
         if (mediaRecorder != null) {
             mediaRecorder.release();
             mediaRecorder = null;
         }
+        
+        // 释放音频焦点
+        if (audioFocusGranted) {
+            audioManager.abandonAudioFocus(audioFocusChangeListener);
+            audioFocusGranted = false;
+        }
+        
+        // 释放唤醒锁
+        if (wakeLock != null && wakeLock.isHeld()) {
+            wakeLock.release();
+            wakeLock = null;
+        }
+        
+        // 移除计时器回调
+        timerHandler.removeCallbacks(timerRunnable);
     }
     
     /**
