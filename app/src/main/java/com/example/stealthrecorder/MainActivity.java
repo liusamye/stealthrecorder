@@ -2,6 +2,7 @@ package com.example.stealthrecorder;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.GradientDrawable;
 import android.media.AudioManager;
@@ -161,6 +162,7 @@ public class MainActivity extends Activity {
                 }
                 
                 message += "\n\n• 点击📁按钮直接打开文件夹";
+                message += "\n• 开始录音后应用会自动最小化";
                 
                 Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
                 return true;
@@ -177,6 +179,9 @@ public class MainActivity extends Activity {
         
         // 检查是否已有录音文件夹
         checkExistingRecordsFolder();
+        
+        // 检查是否正在录音（应用被重新打开时）
+        checkIfRecordingInProgress();
     }
     
     private void checkAndRequestPermissions() {
@@ -349,6 +354,12 @@ public class MainActivity extends Activity {
             
             Log.d("StealthRecorder", "录音已成功开始");
             
+            // 保存录音状态（用于应用重启时恢复）
+            saveRecordingState();
+            
+            // 自动最小化应用（隐私保护）
+            minimizeApp();
+            
         } catch (Exception e) {
             Log.e("StealthRecorder", "录音启动异常: " + e.getMessage(), e);
             Toast.makeText(this, "录音启动异常: " + e.getClass().getSimpleName(), Toast.LENGTH_LONG).show();
@@ -397,6 +408,9 @@ public class MainActivity extends Activity {
                     wakeLock = null;
                     Log.d("StealthRecorder", "唤醒锁已释放");
                 }
+                
+                // 清除录音状态
+                clearRecordingState();
                 
                 // 更新UI
                 recordButton.setText("● 开始记录");
@@ -477,6 +491,9 @@ public class MainActivity extends Activity {
         
         // 移除计时器回调
         timerHandler.removeCallbacks(timerRunnable);
+        
+        // 确保录音状态被清除
+        clearRecordingState();
     }
     
     /**
@@ -527,6 +544,36 @@ public class MainActivity extends Activity {
             Toast.makeText(this, 
                 "请手动打开文件管理器并导航到：\n" + path, 
                 Toast.LENGTH_LONG).show();
+        }
+    }
+    
+    /**
+     * 最小化应用（隐私保护）
+     */
+    private void minimizeApp() {
+        try {
+            // 方法1：移动到后台
+            moveTaskToBack(true);
+            
+            // 方法2：发送到主页（备用）
+            // Intent startMain = new Intent(Intent.ACTION_MAIN);
+            // startMain.addCategory(Intent.CATEGORY_HOME);
+            // startMain.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            // startActivity(startMain);
+            
+            Log.d("StealthRecorder", "应用已最小化到后台");
+            
+            // 显示简短提示
+            Toast.makeText(this, 
+                "录音已开始，应用已最小化\n需要查看进度时请重新打开应用", 
+                Toast.LENGTH_SHORT).show();
+            
+        } catch (Exception e) {
+            Log.e("StealthRecorder", "最小化应用失败: " + e.getMessage());
+            // 如果最小化失败，至少显示提示
+            Toast.makeText(this, 
+                "录音已开始\n可以手动返回桌面", 
+                Toast.LENGTH_SHORT).show();
         }
     }
     
@@ -596,5 +643,68 @@ public class MainActivity extends Activity {
                 Log.d("StealthRecorder", "发现已有录音文件夹，包含 " + files.length + " 个文件");
             }
         }
+    }
+    
+    /**
+     * 检查是否正在录音（应用被重新打开时）
+     */
+    private void checkIfRecordingInProgress() {
+        SharedPreferences prefs = getSharedPreferences("RecordingPrefs", MODE_PRIVATE);
+        boolean wasRecording = prefs.getBoolean("isRecording", false);
+        long recordingStartTime = prefs.getLong("recordingStartTime", 0);
+        String recordingFilePath = prefs.getString("recordingFilePath", "");
+        
+        if (wasRecording && recordingStartTime > 0) {
+            // 检查录音文件是否存在且正在被写入
+            File recordingFile = new File(recordingFilePath);
+            if (recordingFile.exists()) {
+                long fileSize = recordingFile.length();
+                long currentTime = System.currentTimeMillis();
+                long recordingDuration = (currentTime - recordingStartTime) / 1000;
+                
+                Log.d("StealthRecorder", "发现未完成的录音会话：");
+                Log.d("StealthRecorder", "- 文件: " + recordingFilePath);
+                Log.d("StealthRecorder", "- 大小: " + fileSize + " 字节");
+                Log.d("StealthRecorder", "- 开始时间: " + recordingStartTime);
+                Log.d("StealthRecorder", "- 已录制: " + recordingDuration + " 秒");
+                
+                // 显示恢复提示
+                Toast.makeText(this, 
+                    "发现未完成的录音会话\n请手动停止并重新开始", 
+                    Toast.LENGTH_LONG).show();
+                
+                // 显示录音文件信息
+                fileInfoText.setText("发现未完成录音: " + recordingFile.getName());
+            }
+            
+            // 清除无效的状态
+            clearRecordingState();
+        }
+    }
+    
+    /**
+     * 保存录音状态
+     */
+    private void saveRecordingState() {
+        SharedPreferences prefs = getSharedPreferences("RecordingPrefs", MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putBoolean("isRecording", isRecording);
+        editor.putLong("recordingStartTime", startTime);
+        editor.putString("recordingFilePath", outputFile);
+        editor.apply();
+        Log.d("StealthRecorder", "录音状态已保存");
+    }
+    
+    /**
+     * 清除录音状态
+     */
+    private void clearRecordingState() {
+        SharedPreferences prefs = getSharedPreferences("RecordingPrefs", MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.remove("isRecording");
+        editor.remove("recordingStartTime");
+        editor.remove("recordingFilePath");
+        editor.apply();
+        Log.d("StealthRecorder", "录音状态已清除");
     }
 }
