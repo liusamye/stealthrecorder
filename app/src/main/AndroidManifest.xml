@@ -14,24 +14,24 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="29" />
     
+    <!-- 添加查询所有文件的权限（Android 11+） -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:mimeType="*/*" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.GET_CONTENT" />
+            <data android:mimeType="*/*" />
+        </intent>
+    </queries>
+    
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="语音备忘录"
         android:theme="@android:style/Theme.Light"
         android:requestLegacyExternalStorage="true">
-        
-        <!-- 添加查询所有文件的权限 -->
-        <queries>
-            <intent>
-                <action android:name="android.intent.action.VIEW" />
-                <data android:mimeType="*/*" />
-            </intent>
-            <intent>
-                <action android:name="android.intent.action.GET_CONTENT" />
-                <data android:mimeType="*/*" />
-            </intent>
-        </queries>
         
         <activity
             android:name=".MainActivity"
