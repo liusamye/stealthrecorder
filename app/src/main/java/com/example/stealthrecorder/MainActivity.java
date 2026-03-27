@@ -25,6 +25,7 @@ public class MainActivity extends Activity {
     
     private static final int REQUEST_RECORD_AUDIO_PERMISSION = 200;
     private static final int REQUEST_STORAGE_PERMISSION = 201;
+    private static final String TAG = "StealthRecorder";
     private boolean isRecording = false;
     private Handler timerHandler = new Handler();
     private AudioManager audioManager;
@@ -90,15 +91,45 @@ public class MainActivity extends Activity {
     
     private void startRecording() {
         try {
+            Log.d(TAG, "=== 开始录音 ===");
+            
+            // 检查权限
+            if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                Log.e(TAG, "录音权限未授予");
+                Toast.makeText(this, "需要录音权限", Toast.LENGTH_LONG).show();
+                return;
+            }
+            
+            // 检查存储权限（Android 11+）
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                if (!Environment.isExternalStorageManager()) {
+                    Log.e(TAG, "存储权限未授予（Android 11+）");
+                    Toast.makeText(this, "需要所有文件访问权限", Toast.LENGTH_LONG).show();
+                    return;
+                }
+            } else {
+                if (checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                    Log.e(TAG, "存储权限未授予");
+                    Toast.makeText(this, "需要存储权限", Toast.LENGTH_LONG).show();
+                    return;
+                }
+            }
+            
+            Log.d(TAG, "权限检查通过");
+            
             // 请求音频焦点
-            audioManager.requestAudioFocus(null, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
+            int result = audioManager.requestAudioFocus(null, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
+            Log.d(TAG, "音频焦点请求结果: " + result);
             
             // 启动服务
             Intent serviceIntent = new Intent(this, RecordingService.class);
+            Log.d(TAG, "创建服务Intent");
             
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                Log.d(TAG, "启动前台服务");
                 startForegroundService(serviceIntent);
             } else {
+                Log.d(TAG, "启动普通服务");
                 startService(serviceIntent);
             }
             
@@ -115,11 +146,12 @@ public class MainActivity extends Activity {
             
             // 最小化应用
             moveTaskToBack(true);
+            Log.d(TAG, "应用已最小化");
             Toast.makeText(this, "录音已开始，应用已最小化", Toast.LENGTH_SHORT).show();
             
         } catch (Exception e) {
-            Log.e("StealthRecorder", "录音启动异常", e);
-            Toast.makeText(this, "录音启动失败", Toast.LENGTH_LONG).show();
+            Log.e(TAG, "录音启动异常", e);
+            Toast.makeText(this, "录音启动失败: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
     
