@@ -43,18 +43,9 @@ jobs:
         echo "=== 修复gradle wrapper ==="
         # 确保gradlew可执行
         chmod +x gradlew
-        # 如果gradle-wrapper.jar缺失，使用gradle命令下载
-        if [ ! -f "gradle/wrapper/gradle-wrapper.jar" ] || [ ! -s "gradle/wrapper/gradle-wrapper.jar" ]; then
-            echo "下载gradle-wrapper.jar..."
-            # 使用gradle wrapper命令
-            ./gradlew wrapper --gradle-version 8.5 || echo "尝试备用方案..."
-            # 备用方案：直接下载
-            if [ ! -f "gradle/wrapper/gradle-wrapper.jar" ]; then
-                echo "使用curl下载..."
-                curl -L -o gradle/wrapper/gradle-wrapper.jar \
-                  https://services.gradle.org/distributions/gradle-8.5-bin.zip 2>/dev/null || true
-            fi
-        fi
+        # 删除可能损坏的gradle-wrapper.jar
+        rm -f gradle/wrapper/gradle-wrapper.jar 2>/dev/null || true
+        echo "已清除可能损坏的gradle-wrapper.jar"
         echo "=== 当前文件状态 ==="
         ls -la gradle/wrapper/ 2>/dev/null || echo "gradle/wrapper目录不存在"
     
@@ -70,8 +61,17 @@ jobs:
     - name: Build with Gradle
       run: |
         echo "=== 开始构建 ==="
-        # 使用gradle命令（由setup-gradle动作提供）
-        ./gradlew assembleDebug --stacktrace --info --no-daemon
+        # 方法1：尝试使用gradle命令（由setup-gradle动作提供）
+        echo "尝试方法1: 使用gradle命令..."
+        gradle assembleDebug --stacktrace --info --no-daemon --project-dir . || {
+            echo "方法1失败，尝试方法2..."
+            # 方法2：如果gradle命令失败，尝试使用下载的gradle
+            echo "下载gradle-8.5..."
+            wget -q https://services.gradle.org/distributions/gradle-8.5-bin.zip -O /tmp/gradle-8.5.zip
+            unzip -q /tmp/gradle-8.5.zip -d /tmp/
+            echo "使用下载的gradle构建..."
+            /tmp/gradle-8.5/bin/gradle assembleDebug --stacktrace --info --no-daemon --project-dir .
+        }
         echo "=== 构建完成 ==="
         
     - name: Verify APK
