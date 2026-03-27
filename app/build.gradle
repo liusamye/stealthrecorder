@@ -8,8 +8,8 @@ android {
         applicationId "com.example.stealthrecorder"
         minSdk 21  // 提高最低版本以获得更好兼容性
         targetSdk 33
-        versionCode 3  # 版本号递增
-        versionName "1.2"  # 新版本
+        versionCode 3  // 版本号递增
+        versionName "1.2"  // 新版本
     }
 
     buildTypes {
