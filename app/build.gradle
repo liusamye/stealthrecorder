@@ -4,14 +4,14 @@ plugins {
 
 android {
     namespace 'com.example.stealthrecorder'
-    compileSdk 30
+    compileSdk 33  // 更新到更现代的版本
 
     defaultConfig {
         applicationId "com.example.stealthrecorder"
-        minSdk 16
-        targetSdk 30
-        versionCode 2  # 版本号递增
-        versionName "1.1"  # 新版本
+        minSdk 21  // 提高最低版本以获得更好兼容性
+        targetSdk 33
+        versionCode 3  # 版本号递增
+        versionName "1.2"  # 新版本
     }
 
     buildTypes {
