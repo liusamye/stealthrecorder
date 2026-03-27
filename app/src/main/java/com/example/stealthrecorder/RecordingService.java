@@ -18,6 +18,7 @@ public class RecordingService extends Service {
     private MediaRecorder mediaRecorder;
     private String outputFile;
     private PowerManager.WakeLock wakeLock;
+    private boolean isRecording = false;
     
     @Override
     public void onCreate() {
@@ -42,16 +43,39 @@ public class RecordingService extends Service {
     }
     
     private void startForegroundService() {
-        // 创建简单通知（兼容旧版本）
-        Notification notification = new Notification.Builder(this)
+        // 创建通知渠道（Android 8.0+要求）
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                "recording_channel",
+                "录音服务",
+                NotificationManager.IMPORTANCE_LOW
+            );
+            channel.setDescription("语音备忘录录音服务");
+            channel.setShowBadge(false);
+            
+            NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+            manager.createNotificationChannel(channel);
+        }
+        
+        // 创建通知
+        Notification.Builder builder;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            builder = new Notification.Builder(this, "recording_channel");
+        } else {
+            builder = new Notification.Builder(this);
+        }
+        
+        Notification notification = builder
             .setContentTitle("语音备忘录 - 录音中")
             .setContentText("点击返回应用")
             .setSmallIcon(android.R.drawable.ic_btn_speak_now)
             .setOngoing(true)
+            .setPriority(Notification.PRIORITY_LOW)
+            .setCategory(Notification.CATEGORY_SERVICE)
             .build();
         
         startForeground(NOTIFICATION_ID, notification);
-        Log.d(TAG, "Foreground service started");
+        Log.d(TAG, "Foreground service started with notification");
     }
     
     private boolean startRecording() {
@@ -104,6 +128,7 @@ public class RecordingService extends Service {
             
             mediaRecorder.start();
             Log.d(TAG, "Recording started: " + outputFile);
+            isRecording = true;
             
             // 立即检查文件大小
             File file = new File(outputFile);
@@ -132,6 +157,11 @@ public class RecordingService extends Service {
     private void stopRecording() {
         Log.d(TAG, "=== Service: 停止录音 ===");
         
+        if (!isRecording) {
+            Log.w(TAG, "录音未开始，无需停止");
+            return;
+        }
+        
         if (mediaRecorder != null) {
             try {
                 Log.d(TAG, "停止MediaRecorder...");
@@ -148,6 +178,8 @@ public class RecordingService extends Service {
         } else {
             Log.w(TAG, "mediaRecorder为null，无法停止");
         }
+        
+        isRecording = false;
         
         if (wakeLock != null && wakeLock.isHeld()) {
             wakeLock.release();
