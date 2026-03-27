@@ -38,6 +38,26 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
     
+    - name: Fix Gradle Wrapper
+      run: |
+        echo "=== 修复gradle wrapper ==="
+        # 确保gradlew可执行
+        chmod +x gradlew
+        # 如果gradle-wrapper.jar缺失，使用gradle命令下载
+        if [ ! -f "gradle/wrapper/gradle-wrapper.jar" ] || [ ! -s "gradle/wrapper/gradle-wrapper.jar" ]; then
+            echo "下载gradle-wrapper.jar..."
+            # 使用gradle wrapper命令
+            ./gradlew wrapper --gradle-version 8.5 || echo "尝试备用方案..."
+            # 备用方案：直接下载
+            if [ ! -f "gradle/wrapper/gradle-wrapper.jar" ]; then
+                echo "使用curl下载..."
+                curl -L -o gradle/wrapper/gradle-wrapper.jar \
+                  https://services.gradle.org/distributions/gradle-8.5-bin.zip 2>/dev/null || true
+            fi
+        fi
+        echo "=== 当前文件状态 ==="
+        ls -la gradle/wrapper/ 2>/dev/null || echo "gradle/wrapper目录不存在"
+    
     - name: Debug - List files before build
       run: |
         echo "=== 构建前文件结构 ==="
