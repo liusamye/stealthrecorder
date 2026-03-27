@@ -27,6 +27,7 @@ android {
 }
 
 dependencies {
-    // 零依赖！纯原生Android
-    // 不需要任何AndroidX或第三方库
+    // 添加AndroidX Core和AppCompat支持
+    implementation 'androidx.core:core:1.6.0'
+    implementation 'androidx.appcompat:appcompat:1.3.1'
 }

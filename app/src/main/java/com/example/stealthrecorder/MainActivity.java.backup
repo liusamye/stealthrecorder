@@ -81,7 +81,9 @@ public class MainActivity extends Activity {
                         // 重新获得音频焦点，可以恢复录音
                         Log.d("StealthRecorder", "重新获得音频焦点");
                         audioFocusGranted = true;
-                        if (isRecording) {
+                        if (isRecording && mediaRecorder != null) {
+                            // 可以尝试恢复录音，但MediaRecorder不支持暂停/恢复
+                            // 所以这里只是更新状态
                             statusText.setText("🔴 记录中...（焦点恢复）");
                         }
                         break;
@@ -124,9 +126,6 @@ public class MainActivity extends Activity {
         
         // 初始化音频管理器
         audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
-        
-        // 初始化广播接收器
-        initRecordingReceiver();
         
         // 检查权限
         checkAndRequestPermissions();
@@ -172,7 +171,6 @@ public class MainActivity extends Activity {
                 
                 message += "\n\n• 点击📁按钮直接打开文件夹";
                 message += "\n• 开始录音后应用会自动最小化";
-                message += "\n• 鸿蒙系统：请确保开启后台权限";
                 
                 Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
                 return true;
@@ -192,115 +190,6 @@ public class MainActivity extends Activity {
         
         // 检查是否正在录音（应用被重新打开时）
         checkIfRecordingInProgress();
-        
-        // 鸿蒙适配：检查是否是鸿蒙系统并提示
-        if (isHarmonyOS()) {
-            showHarmonyBackgroundSettingGuide();
-        }
-    }
-    
-    @Override
-    protected void onResume() {
-        super.onResume();
-        // 注册广播接收器
-        registerRecordingReceiver();
-    }
-    
-    @Override
-    protected void onPause() {
-        super.onPause();
-        // 注销广播接收器
-        unregisterRecordingReceiver();
-    }
-    
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        
-        // 确保注销广播接收器
-        unregisterRecordingReceiver();
-        
-        // 释放音频焦点
-        if (audioFocusGranted) {
-            audioManager.abandonAudioFocus(audioFocusChangeListener);
-            audioFocusGranted = false;
-        }
-        
-        // 移除计时器回调
-        timerHandler.removeCallbacks(timerRunnable);
-    }
-    
-    private void initRecordingReceiver() {
-        recordingReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                String action = intent.getAction();
-                if (action == null) return;
-                
-                switch (action) {
-                    case RecordingService.ACTION_UPDATE_DURATION:
-                        int minutes = intent.getIntExtra("durationMinutes", 0);
-                        Log.d("StealthRecorder", "收到时长更新: " + minutes + "分钟");
-                        // 可以更新UI显示时长
-                        break;
-                        
-                    case "com.example.stealthrecorder.RECORDING_COMPLETE":
-                        String filePath = intent.getStringExtra("filePath");
-                        long fileSize = intent.getLongExtra("fileSize", 0);
-                        int durationMinutes = intent.getIntExtra("durationMinutes", 0);
-                        
-                        Log.d("StealthRecorder", "录音完成: " + filePath);
-                        Log.d("StealthRecorder", "文件大小: " + fileSize + "字节");
-                        Log.d("StealthRecorder", "录音时长: " + durationMinutes + "分钟");
-                        
-                        // 更新UI
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                isRecording = false;
-                                timerHandler.removeCallbacks(timerRunnable);
-                                recordButton.setText("● 开始记录");
-                                statusText.setText("🟢 记录已保存");
-                                timerText.setVisibility(View.GONE);
-                                fileInfoText.setText("文件已保存到笔记");
-                                recordButton.setBackgroundResource(R.drawable.record_button_bg);
-                                
-                                // 显示保存信息
-                                String fileName = new File(filePath).getName();
-                                String message = "✅ 笔记已保存: " + fileName + "\n";
-                                message += "时长: " + durationMinutes + "分钟\n";
-                                message += "大小: " + (fileSize / 1024) + "KB";
-                                
-                                Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
-                            }
-                        });
-                        break;
-                }
-            }
-        };
-    }
-    
-    private void registerRecordingReceiver() {
-        if (!isReceiverRegistered) {
-            IntentFilter filter = new IntentFilter();
-            filter.addAction(RecordingService.ACTION_UPDATE_DURATION);
-            filter.addAction("com.example.stealthrecorder.RECORDING_COMPLETE");
-            registerReceiver(recordingReceiver, filter);
-            isReceiverRegistered = true;
-            Log.d("StealthRecorder", "广播接收器已注册");
-        }
-    }
-    
-    private void unregisterRecordingReceiver() {
-        if (isReceiverRegistered && recordingReceiver != null) {
-            try {
-                unregisterReceiver(recordingReceiver);
-                isReceiverRegistered = false;
-                Log.d("StealthRecorder", "广播接收器已注销");
-            } catch (Exception e) {
-                Log.e("StealthRecorder", "注销广播接收器失败", e);
-            }
-        }
     }
     
     private void checkAndRequestPermissions() {
@@ -397,6 +286,14 @@ public class MainActivity extends Activity {
                 Toast.makeText(this, "无法获取音频焦点，录音可能受影响", Toast.LENGTH_SHORT).show();
             }
             
+            // 获取唤醒锁，防止CPU休眠
+            PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
+            wakeLock = powerManager.newWakeLock(
+                PowerManager.PARTIAL_WAKE_LOCK, 
+                "StealthRecorder::RecordingWakeLock");
+            wakeLock.acquire(30 * 60 * 1000L /*30分钟*/); // 30分钟超时
+            Log.d("StealthRecorder", "唤醒锁已获取");
+            
             // 显示打开文件夹按钮
             openFolderButton.setVisibility(View.VISIBLE);
             
@@ -407,15 +304,39 @@ public class MainActivity extends Activity {
             Log.d("StealthRecorder", "目录路径: " + recordsDir.getAbsolutePath());
             Log.d("StealthRecorder", "音频焦点状态: " + (audioFocusGranted ? "已获取" : "未获取"));
             
-            // 启动前台服务进行录音
-            Intent serviceIntent = new Intent(this, RecordingService.class);
-            serviceIntent.putExtra("outputFile", outputFile);
+            mediaRecorder = new MediaRecorder();
+            mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
             
-            // Android 8.0+需要这样启动
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(serviceIntent);
-            } else {
-                startService(serviceIntent);
+            // 使用更兼容的设置
+            mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+            mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+            
+            // 降低质量以提高兼容性
+            mediaRecorder.setAudioEncodingBitRate(64000);  // 从128k降低到64k
+            mediaRecorder.setAudioSamplingRate(22050);     // 从44.1k降低到22.05k
+            
+            mediaRecorder.setOutputFile(outputFile);
+            
+            // 准备录音
+            try {
+                mediaRecorder.prepare();
+            } catch (IOException e) {
+                Log.e("StealthRecorder", "准备录音失败: " + e.getMessage(), e);
+                Toast.makeText(this, "准备录音失败: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                mediaRecorder.release();
+                mediaRecorder = null;
+                return;
+            }
+            
+            // 开始录音
+            try {
+                mediaRecorder.start();
+            } catch (IllegalStateException e) {
+                Log.e("StealthRecorder", "开始录音失败: " + e.getMessage(), e);
+                Toast.makeText(this, "开始录音失败，请重试", Toast.LENGTH_LONG).show();
+                mediaRecorder.release();
+                mediaRecorder = null;
+                return;
             }
             
             isRecording = true;
@@ -439,7 +360,7 @@ public class MainActivity extends Activity {
             // 启动计时器
             timerHandler.postDelayed(timerRunnable, 1000);
             
-            Log.d("StealthRecorder", "录音已成功开始（通过前台服务）");
+            Log.d("StealthRecorder", "录音已成功开始");
             
             // 保存录音状态（用于应用重启时恢复）
             saveRecordingState();
@@ -450,45 +371,137 @@ public class MainActivity extends Activity {
         } catch (Exception e) {
             Log.e("StealthRecorder", "录音启动异常: " + e.getMessage(), e);
             Toast.makeText(this, "录音启动异常: " + e.getClass().getSimpleName(), Toast.LENGTH_LONG).show();
+            if (mediaRecorder != null) {
+                mediaRecorder.release();
+                mediaRecorder = null;
+            }
         }
     }
     
     private void stopRecording() {
-        // 停止前台服务
-        Intent serviceIntent = new Intent(this, RecordingService.class);
-        serviceIntent.setAction(RecordingService.ACTION_STOP_RECORDING);
+        if (mediaRecorder != null) {
+            try {
+                mediaRecorder.stop();
+                
+                // 检查文件是否创建成功
+                File recordedFile = new File(outputFile);
+                if (recordedFile.exists()) {
+                    long fileSize = recordedFile.length();
+                    Log.d("StealthRecorder", "录音文件已保存，大小: " + fileSize + " 字节");
+                    
+                    if (fileSize < 1024) { // 小于1KB可能是空的
+                        Toast.makeText(this, "录音文件可能为空 (" + fileSize + "字节)", Toast.LENGTH_LONG).show();
+                    }
+                } else {
+                    Log.w("StealthRecorder", "录音文件未创建: " + outputFile);
+                    Toast.makeText(this, "录音文件未创建", Toast.LENGTH_LONG).show();
+                }
+                
+                mediaRecorder.release();
+                mediaRecorder = null;
+                
+                isRecording = false;
+                timerHandler.removeCallbacks(timerRunnable);
+                
+                // 释放音频焦点
+                if (audioFocusGranted) {
+                    audioManager.abandonAudioFocus(audioFocusChangeListener);
+                    audioFocusGranted = false;
+                    Log.d("StealthRecorder", "音频焦点已释放");
+                }
+                
+                // 释放唤醒锁
+                if (wakeLock != null && wakeLock.isHeld()) {
+                    wakeLock.release();
+                    wakeLock = null;
+                    Log.d("StealthRecorder", "唤醒锁已释放");
+                }
+                
+                // 清除录音状态
+                clearRecordingState();
+                
+                // 更新UI
+                recordButton.setText("● 开始记录");
+                statusText.setText("🟢 记录已保存");
+                timerText.setVisibility(View.GONE);
+                fileInfoText.setText("文件已保存到笔记");
+                
+                // 恢复按钮背景为正常状态
+                recordButton.setBackgroundResource(R.drawable.record_button_bg);
+                Log.d("StealthRecorder", "按钮背景已恢复为正常状态");
+                
+                // 显示保存信息
+                String fileName = new File(outputFile).getName();
+                String parentDir = new File(outputFile).getParent();
+                String message = "✅ 笔记已保存: " + fileName + "\n";
+                
+                // 根据存储位置给出不同的提示
+                if (parentDir.contains("Recordings")) {
+                    message += "位置: 内部存储/Recordings/\n";
+                    message += "✅ 根目录，安全保存";
+                } else if (parentDir.contains("Android/data")) {
+                    message += "位置: 应用私有目录\n";
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                        message += "⚠️ 需要文件管理权限保存到根目录";
+                    } else {
+                        message += "⚠️ 应用卸载时会删除文件！";
+                    }
+                } else {
+                    message += "位置: " + parentDir + "\n";
+                }
+                
+                Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+                
+            } catch (RuntimeException e) {
+                Log.e("StealthRecorder", "停止录音失败: " + e.getMessage(), e);
+                Toast.makeText(this, "停止录音失败: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                
+                // 即使停止失败也要释放资源
+                try {
+                    mediaRecorder.release();
+                } catch (Exception ex) {
+                    Log.e("StealthRecorder", "释放MediaRecorder失败", ex);
+                }
+                mediaRecorder = null;
+            }
+        }
+    }
+    
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
         
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(serviceIntent);
-        } else {
-            startService(serviceIntent);
+        // 如果还在录音，先停止
+        if (isRecording && mediaRecorder != null) {
+            try {
+                mediaRecorder.stop();
+            } catch (Exception e) {
+                Log.e("StealthRecorder", "停止录音失败: " + e.getMessage());
+            }
         }
         
-        Log.d("StealthRecorder", "已发送停止录音指令到服务");
-        
-        // 注意：UI更新将在收到RECORDING_COMPLETE广播后进行
-        // 这里先进行基本UI更新
-        isRecording = false;
-        timerHandler.removeCallbacks(timerRunnable);
+        if (mediaRecorder != null) {
+            mediaRecorder.release();
+            mediaRecorder = null;
+        }
         
         // 释放音频焦点
         if (audioFocusGranted) {
             audioManager.abandonAudioFocus(audioFocusChangeListener);
             audioFocusGranted = false;
-            Log.d("StealthRecorder", "音频焦点已释放");
         }
         
-        // 清除录音状态
+        // 释放唤醒锁
+        if (wakeLock != null && wakeLock.isHeld()) {
+            wakeLock.release();
+            wakeLock = null;
+        }
+        
+        // 移除计时器回调
+        timerHandler.removeCallbacks(timerRunnable);
+        
+        // 确保录音状态被清除
         clearRecordingState();
-        
-        // 临时UI更新（最终由广播接收器更新）
-        recordButton.setText("● 开始记录");
-        statusText.setText("正在停止录音...");
-        timerText.setVisibility(View.GONE);
-        
-        // 恢复按钮背景为正常状态
-        recordButton.setBackgroundResource(R.drawable.record_button_bg);
-        Log.d("StealthRecorder", "按钮背景已恢复为正常状态");
     }
     
     /**
@@ -549,6 +562,12 @@ public class MainActivity extends Activity {
         try {
             // 方法1：移动到后台
             moveTaskToBack(true);
+            
+            // 方法2：发送到主页（备用）
+            // Intent startMain = new Intent(Intent.ACTION_MAIN);
+            // startMain.addCategory(Intent.CATEGORY_HOME);
+            // startMain.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            // startActivity(startMain);
             
             Log.d("StealthRecorder", "应用已最小化到后台");
             
@@ -695,64 +714,5 @@ public class MainActivity extends Activity {
         editor.remove("recordingFilePath");
         editor.apply();
         Log.d("StealthRecorder", "录音状态已清除");
-    }
-    
-    /**
-     * 检查是否是鸿蒙系统
-     */
-    private boolean isHarmonyOS() {
-        try {
-            Class<?> buildExClass = Class.forName("com.huawei.system.BuildEx");
-            java.lang.reflect.Method method = buildExClass.getMethod("getOsBrand");
-            return "harmony".equals(method.invoke(null));
-        } catch (Exception e) {
-            // 非鸿蒙设备或API不可用
-            return false;
-        }
-    }
-    
-    /**
-     * 显示鸿蒙后台设置引导
-     */
-    private void showHarmonyBackgroundSettingGuide() {
-        new android.app.AlertDialog.Builder(this)
-            .setTitle("鸿蒙系统提示")
-            .setMessage("为了确保后台录音正常，请进行以下设置：\n\n" +
-                       "1. 进入「设置」→「应用」→「应用启动管理」\n" +
-                       "2. 找到本应用，关闭「自动管理」\n" +
-                       "3. 开启「允许后台活动」\n\n" +
-                       "是否现在跳转到设置页面？")
-            .setPositiveButton("去设置", (dialog, which) -> {
-                try {
-                    Intent intent = new Intent();
-                    intent.setAction("com.huawei.systemmanager.optimize.process.ProtectActivity");
-                    intent.setClassName("com.huawei.systemmanager", 
-                        "com.huawei.systemmanager.optimize.process.ProtectActivity");
-                    intent.putExtra("packageName", getPackageName());
-                    startActivity(intent);
-                } catch (Exception e) {
-                    // 跳转失败，显示手动指引
-                    showManualSettingGuide();
-                }
-            })
-            .setNegativeButton("稍后设置", null)
-            .show();
-    }
-    
-    /**
-     * 显示手动设置指引
-     */
-    private void showManualSettingGuide() {
-        new android.app.AlertDialog.Builder(this)
-            .setTitle("手动设置指引")
-            .setMessage("请按以下步骤手动设置：\n\n" +
-                       "1. 打开手机「设置」\n" +
-                       "2. 进入「应用」→「应用启动管理」\n" +
-                       "3. 找到「语音备忘录」\n" +
-                       "4. 关闭「自动管理」\n" +
-                       "5. 开启「允许后台活动」\n\n" +
-                       "设置完成后，后台录音将更加稳定。")
-            .setPositiveButton("明白了", null)
-            .show();
     }
 }

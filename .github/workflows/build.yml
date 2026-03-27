@@ -51,7 +51,7 @@ jobs:
       run: |
         echo "=== 开始构建 ==="
         # 使用gradle命令（由setup-gradle动作提供）
-        gradle assembleDebug --stacktrace --info
+        ./gradlew assembleDebug --stacktrace --info --no-daemon
         echo "=== 构建完成 ==="
     
     - name: Debug - Find APK files
