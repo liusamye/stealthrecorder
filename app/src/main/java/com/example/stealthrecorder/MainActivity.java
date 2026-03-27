@@ -1,6 +1,8 @@
 package com.example.stealthrecorder;
 
 import android.app.Activity;
+import android.app.ActivityManager;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
@@ -87,11 +89,48 @@ public class MainActivity extends Activity {
                 }
             }
         });
+        
+        // 检查服务是否正在运行（Activity恢复时）
+        checkServiceStatus();
+    }
+    
+    private void checkServiceStatus() {
+        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (RecordingService.class.getName().equals(service.service.getClassName())) {
+                Log.d(TAG, "检测到录音服务正在运行");
+                isRecording = true;
+                updateUIForRecording();
+                return;
+            }
+        }
+        Log.d(TAG, "录音服务未运行");
+    }
+    
+    private void updateUIForRecording() {
+        if (isRecording) {
+            recordButton.setText("■ 停止记录");
+            statusText.setText("🔴 记录中...");
+            timerText.setVisibility(View.VISIBLE);
+            recordButton.setBackgroundResource(R.drawable.record_button_recording);
+        } else {
+            recordButton.setText("● 开始记录");
+            statusText.setText("🟢 准备就绪");
+            timerText.setVisibility(View.GONE);
+            recordButton.setBackgroundResource(R.drawable.record_button_bg);
+        }
     }
     
     private void startRecording() {
         try {
             Log.d(TAG, "=== 开始录音 ===");
+            
+            // 检查是否已经在录音
+            if (isRecording) {
+                Log.w(TAG, "已经在录音中，忽略重复启动");
+                Toast.makeText(this, "已经在录音中", Toast.LENGTH_SHORT).show();
+                return;
+            }
             
             // 检查权限
             if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
@@ -134,12 +173,8 @@ public class MainActivity extends Activity {
             }
             
             isRecording = true;
-            recordButton.setText("■ 停止记录");
-            statusText.setText("🔴 记录中...");
-            timerText.setVisibility(View.VISIBLE);
+            updateUIForRecording();
             timerText.setText("00:00");
-            
-            recordButton.setBackgroundResource(R.drawable.record_button_recording);
             
             // 启动计时器
             timerHandler.postDelayed(timerRunnable, 1000);
@@ -163,11 +198,8 @@ public class MainActivity extends Activity {
         isRecording = false;
         timerHandler.removeCallbacks(timerRunnable);
         
-        recordButton.setText("● 开始记录");
+        updateUIForRecording();
         statusText.setText("🟢 记录已保存");
-        timerText.setVisibility(View.GONE);
-        
-        recordButton.setBackgroundResource(R.drawable.record_button_bg);
         
         Toast.makeText(this, "录音已保存", Toast.LENGTH_LONG).show();
     }
@@ -189,6 +221,30 @@ public class MainActivity extends Activity {
                 Toast.makeText(this, "需要存储权限才能保存录音", Toast.LENGTH_LONG).show();
             }
         }
+    }
+    
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putBoolean("isRecording", isRecording);
+        Log.d(TAG, "保存状态: isRecording=" + isRecording);
+    }
+    
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        isRecording = savedInstanceState.getBoolean("isRecording", false);
+        Log.d(TAG, "恢复状态: isRecording=" + isRecording);
+        if (isRecording) {
+            updateUIForRecording();
+        }
+    }
+    
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // 每次回到前台时检查服务状态
+        checkServiceStatus();
     }
     
     @Override
