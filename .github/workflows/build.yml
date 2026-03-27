@@ -30,6 +30,21 @@ jobs:
         yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
         echo "Android SDK licenses accepted"
     
+    - name: Add Google Maven repository
+      run: |
+        echo "=== 添加Google Maven仓库 ==="
+        # 确保gradle能访问Google Maven仓库
+        mkdir -p ~/.gradle
+        cat > ~/.gradle/init.gradle << 'EOF'
+        allprojects {
+            repositories {
+                google()
+                mavenCentral()
+            }
+        }
+        EOF
+        echo "Google Maven仓库配置已添加"
+    
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v3
       with:
