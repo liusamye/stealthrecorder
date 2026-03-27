@@ -24,26 +24,23 @@ jobs:
     
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
+      with:
+        # 安装Android SDK 33，与AGP 7.4.2兼容
+        api-level: 33
+        build-tools: 33.0.0
+        ndk: none
+        cmake: none
     
     - name: Accept Android SDK licenses
       run: |
         yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
         echo "Android SDK licenses accepted"
     
-    - name: Add Google Maven repository
+    - name: Setup Android SDK components
       run: |
-        echo "=== 添加Google Maven仓库 ==="
-        # 确保gradle能访问Google Maven仓库
-        mkdir -p ~/.gradle
-        cat > ~/.gradle/init.gradle << 'EOF'
-        allprojects {
-            repositories {
-                google()
-                mavenCentral()
-            }
-        }
-        EOF
-        echo "Google Maven仓库配置已添加"
+        echo "=== 安装必要的Android SDK组件 ==="
+        $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-33" "build-tools;33.0.0"
+        echo "Android SDK组件安装完成"
     
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v3
