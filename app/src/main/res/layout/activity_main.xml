@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="24dp"
+    android:orientation="vertical"
+    android:gravity="center_horizontal"
+    android:background="#F5F5F5"
+    tools:context=".MainActivity">
+
+    <!-- 应用标题 -->
+    <TextView
+        android:id="@+id/titleText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="📝 笔记助手"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        android:textColor="#333333"
+        android:layout_marginTop="40dp" />
+
+    <TextView
+        android:id="@+id/subtitleText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="灵感随时记录"
+        android:textSize="16sp"
+        android:textColor="#666666"
+        android:layout_marginTop="8dp" />
+
+    <!-- 录音按钮区域 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:layout_marginTop="40dp">
+
+        <Button
+            android:id="@+id/recordButton"
+            android:layout_width="180dp"
+            android:layout_height="180dp"
+            android:text="● 开始记录"
+            android:textSize="18sp"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/record_button_bg"
+            android:stateListAnimator="@null"
+            android:elevation="4dp" />
+
+        <TextView
+            android:id="@+id/timerText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="00:00"
+            android:textSize="32sp"
+            android:textColor="#333333"
+            android:layout_marginTop="24dp"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <!-- 状态和信息区域 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:layout_marginTop="20dp"
+        android:padding="16dp"
+        android:background="#FFFFFF"
+        android:elevation="2dp"
+        android:radius="12dp">
+
+        <TextView
+            android:id="@+id/statusText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🟢 准备就绪"
+            android:textSize="18sp"
+            android:textColor="#333333" />
+
+        <TextView
+            android:id="@+id/fileInfoText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="文件将保存到安全位置"
+            android:textSize="14sp"
+            android:textColor="#666666"
+            android:layout_marginTop="8dp" />
+
+        <!-- 打开文件夹按钮 -->
+        <Button
+            android:id="@+id/openFolderButton"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="📁 打开录音文件夹"
+            android:textSize="16sp"
+            android:textColor="#FFFFFF"
+            android:background="#2196F3"
+            android:layout_marginTop="16dp"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/hintText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="💡 长按录音按钮查看详细说明"
+            android:textSize="12sp"
+            android:textColor="#999999"
+            android:layout_marginTop="12dp" />
+    </LinearLayout>
+
+</LinearLayout>

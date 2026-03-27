@@ -1,0 +1,93 @@
+name: Android CI
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true  # 修复Node.js版本警告
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+    
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+    
+    - name: Accept Android SDK licenses
+      run: |
+        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+        echo "Android SDK licenses accepted"
+    
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
+      with:
+        gradle-version: '8.5'
+    
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+    
+    - name: Debug - List files before build
+      run: |
+        echo "=== 构建前文件结构 ==="
+        find . -type f -name "*.gradle" -o -name "*.java" -o -name "*.xml" | head -20
+        echo "=== gradlew 权限 ==="
+        ls -la gradlew
+        echo "=== 当前目录 ==="
+        pwd && ls -la
+    
+    - name: Build with Gradle
+      run: |
+        echo "=== 开始构建 ==="
+        # 使用gradle命令（由setup-gradle动作提供）
+        ./gradlew assembleDebug --stacktrace --info --no-daemon
+        echo "=== 构建完成 ==="
+        
+    - name: Verify APK
+      run: |
+        echo "=== 验证APK ==="
+        if [ -f "app/build/outputs/apk/debug/app-debug.apk" ]; then
+            echo "✅ APK生成成功"
+            ls -lh app/build/outputs/apk/debug/app-debug.apk
+            echo "APK信息:"
+            # 尝试获取APK基本信息
+            if command -v aapt &> /dev/null; then
+                aapt dump badging app/build/outputs/apk/debug/app-debug.apk | grep -E "(package|launchable-activity|version)" | head -5
+            fi
+        else
+            echo "❌ APK未生成"
+            echo "检查构建输出:"
+            find app/build -name "*.apk" -type f 2>/dev/null || echo "未找到APK文件"
+        fi
+    
+    - name: Debug - Find APK files
+      run: |
+        echo "=== 查找APK文件 ==="
+        find . -name "*.apk" -type f 2>/dev/null || echo "未找到APK文件"
+        echo "=== 检查构建目录 ==="
+        find app/build -type f 2>/dev/null | head -20 || echo "app/build目录不存在"
+        echo "=== 检查输出目录 ==="
+        ls -la app/build/outputs/ 2>/dev/null || echo "输出目录不存在"
+        ls -la app/build/outputs/apk/ 2>/dev/null || echo "apk目录不存在"
+        ls -la app/build/outputs/apk/debug/ 2>/dev/null || echo "debug目录不存在"
+    
+    - name: Upload APK (if exists)
+      uses: actions/upload-artifact@v4
+      if: success()
+      with:
+        name: stealth-recorder-apk
+        path: |
+          app/build/outputs/apk/**/*.apk
+          app/build/**/*.apk
+        retention-days: 7
