@@ -52,6 +52,13 @@ jobs:
     - name: Prepare Gradle
       run: |
         echo "=== 准备Gradle环境 ==="
+        # 如果gradle-wrapper.jar缺失，生成它
+        if [ ! -f "gradle/wrapper/gradle-wrapper.jar" ]; then
+            echo "生成gradle wrapper..."
+            # 使用gradle命令生成wrapper
+            gradle wrapper --gradle-version 7.5 --distribution-type bin
+            echo "✅ gradle wrapper生成完成"
+        fi
         chmod +x gradlew
         echo "gradlew已设置为可执行"
         echo "=== 检查Gradle配置 ==="
@@ -69,8 +76,9 @@ jobs:
     - name: Build with Gradle
       run: |
         echo "=== 开始构建 ==="
-        # 使用gradlew构建（会自动下载正确的gradle版本）
-        ./gradlew assembleDebug --stacktrace --info --no-daemon
+        # 方法1：尝试使用gradle命令（由setup-gradle提供）
+        echo "使用gradle命令构建..."
+        gradle assembleDebug --stacktrace --info --no-daemon --project-dir .
         echo "=== 构建完成 ==="
         
     - name: Verify APK
