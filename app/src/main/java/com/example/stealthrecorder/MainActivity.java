@@ -75,7 +75,7 @@ public class MainActivity extends Activity {
             audioManager.requestAudioFocus(null, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
             
             // 启动服务
-            Intent serviceIntent = new Intent(this, RecordingService_fixed.class);
+            Intent serviceIntent = new Intent(this, RecordingService.class);
             
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 startForegroundService(serviceIntent);
@@ -106,7 +106,7 @@ public class MainActivity extends Activity {
     
     private void stopRecording() {
         // 停止服务
-        Intent serviceIntent = new Intent(this, RecordingService_fixed.class);
+        Intent serviceIntent = new Intent(this, RecordingService.class);
         stopService(serviceIntent);
         
         isRecording = false;
