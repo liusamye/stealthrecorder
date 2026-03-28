@@ -35,6 +35,8 @@ public class MainActivity extends Activity {
     private Button recordButton;
     private TextView statusText;
     private TextView timerText;
+    private TextView fileInfoText;
+    private Button openFolderButton;
     
     private Runnable timerRunnable = new Runnable() {
         @Override
@@ -52,6 +54,8 @@ public class MainActivity extends Activity {
         recordButton = findViewById(R.id.recordButton);
         statusText = findViewById(R.id.statusText);
         timerText = findViewById(R.id.timerText);
+        fileInfoText = findViewById(R.id.fileInfoText);
+        openFolderButton = findViewById(R.id.openFolderButton);
         
         audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
         
@@ -96,6 +100,14 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View v) {
                 showMenu(v);
+            }
+        });
+        
+        // 打开文件夹按钮
+        openFolderButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                openRecordingsFolder();
             }
         });
         
@@ -188,6 +200,29 @@ public class MainActivity extends Activity {
         Toast.makeText(this, "无法打开官网", Toast.LENGTH_SHORT).show();
     }
     
+    private void openRecordingsFolder() {
+        try {
+            File recordsDir = new File(Environment.getExternalStorageDirectory(), "Recordings");
+            if (!recordsDir.exists()) {
+                recordsDir.mkdirs();
+            }
+            
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setDataAndType(Uri.fromFile(recordsDir), "resource/folder");
+            
+            // 尝试使用文件管理器打开
+            if (intent.resolveActivity(getPackageManager()) != null) {
+                startActivity(intent);
+            } else {
+                // 备用方案：显示路径
+                Toast.makeText(this, "录音文件夹: " + recordsDir.getAbsolutePath(), Toast.LENGTH_LONG).show();
+            }
+        } catch (Exception e) {
+            Toast.makeText(this, "无法打开文件夹", Toast.LENGTH_SHORT).show();
+            LogUtil.e("打开文件夹失败", e);
+        }
+    }
+    
     private void checkServiceStatus() {
         try {
             // 使用更安全的方法检查服务状态
@@ -215,13 +250,17 @@ public class MainActivity extends Activity {
         if (isRecording) {
             recordButton.setText("■ 停止记录");
             statusText.setText("🔴 记录中...");
+            fileInfoText.setText("⏺️ 正在录音...");
             timerText.setVisibility(View.VISIBLE);
             recordButton.setBackgroundResource(R.drawable.record_button_recording);
+            openFolderButton.setVisibility(View.GONE);
         } else {
             recordButton.setText("● 开始记录");
             statusText.setText("🟢 准备就绪");
+            fileInfoText.setText("文件将保存到安全位置");
             timerText.setVisibility(View.GONE);
             recordButton.setBackgroundResource(R.drawable.record_button_bg);
+            openFolderButton.setVisibility(View.GONE);
         }
     }
     
@@ -305,7 +344,15 @@ public class MainActivity extends Activity {
         updateUIForRecording();
         statusText.setText("🟢 记录已保存");
         
-        Toast.makeText(this, "录音已保存", Toast.LENGTH_LONG).show();
+        // 显示保存路径
+        File recordsDir = new File(Environment.getExternalStorageDirectory(), "Recordings");
+        String savePath = recordsDir.getAbsolutePath();
+        fileInfoText.setText("📁 保存到: " + savePath);
+        
+        // 显示打开文件夹按钮
+        openFolderButton.setVisibility(View.VISIBLE);
+        
+        Toast.makeText(this, "录音已保存到: " + savePath, Toast.LENGTH_LONG).show();
     }
     
     @Override
