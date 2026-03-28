@@ -19,4 +19,9 @@
         android:id="@+id/menu_about"
         android:title="关于"
         android:icon="@android:drawable/ic_menu_info_details" />
+    
+    <item
+        android:id="@+id/menu_website"
+        android:title="访问官网"
+        android:icon="@android:drawable/ic_menu_view" />
 </menu>

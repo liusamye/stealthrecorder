@@ -124,6 +124,9 @@ public class MainActivity extends Activity {
                 } else if (id == R.id.menu_settings) {
                     openSettings();
                     return true;
+                } else if (id == R.id.menu_website) {
+                    openWebsite();
+                    return true;
                 }
                 return false;
             }
@@ -139,11 +142,11 @@ public class MainActivity extends Activity {
     
     private void openFeedback() {
         Intent intent = new Intent(Intent.ACTION_SENDTO);
-        intent.setData(Uri.parse("mailto:"));
-        intent.putExtra(Intent.EXTRA_EMAIL, new String[]{"feedback@你的域名.com"});
+        intent.setData(Uri.parse("mailto:liusamye@163.com"));
         intent.putExtra(Intent.EXTRA_SUBJECT, "StealthRecorder 反馈");
+        intent.putExtra(Intent.EXTRA_TEXT, "请在此处写下您的反馈、建议或遇到的问题：\n\n");
         try {
-            startActivity(intent);
+            startActivity(Intent.createChooser(intent, "选择邮件应用"));
         } catch (Exception e) {
             Toast.makeText(this, "未找到邮件应用", Toast.LENGTH_SHORT).show();
         }
@@ -162,6 +165,16 @@ public class MainActivity extends Activity {
         Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
         intent.setData(Uri.parse("package:" + getPackageName()));
         startActivity(intent);
+    }
+    
+    private void openWebsite() {
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setData(Uri.parse("https://你的域名.com"));
+        try {
+            startActivity(intent);
+        } catch (Exception e) {
+            Toast.makeText(this, "无法打开浏览器", Toast.LENGTH_SHORT).show();
+        }
     }
     
     private void checkServiceStatus() {
