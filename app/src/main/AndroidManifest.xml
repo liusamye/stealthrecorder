@@ -32,6 +32,12 @@
             </intent-filter>
         </activity>
         
+        <activity
+            android:name=".DonationActivity"
+            android:label="支持开发者"
+            android:exported="false"
+            android:theme="@android:style/Theme.Light" />
+        
         <!-- 简化版录音服务 -->
         <service
             android:name=".RecordingService"

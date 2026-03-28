@@ -90,21 +90,90 @@ public class MainActivity extends Activity {
             }
         });
         
+        // 菜单按钮
+        Button menuButton = findViewById(R.id.menuButton);
+        menuButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showMenu(v);
+            }
+        });
+        
         // 检查服务是否正在运行（Activity恢复时）
         checkServiceStatus();
+    }
+    
+    private void showMenu(View anchor) {
+        android.widget.PopupMenu popup = new android.widget.PopupMenu(this, anchor);
+        popup.getMenuInflater().inflate(R.menu.main_menu, popup.getMenu());
+        
+        popup.setOnMenuItemClickListener(new android.widget.PopupMenu.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(android.view.MenuItem item) {
+                int id = item.getItemId();
+                if (id == R.id.menu_donate) {
+                    openDonation();
+                    return true;
+                } else if (id == R.id.menu_feedback) {
+                    openFeedback();
+                    return true;
+                } else if (id == R.id.menu_about) {
+                    showAbout();
+                    return true;
+                } else if (id == R.id.menu_settings) {
+                    openSettings();
+                    return true;
+                }
+                return false;
+            }
+        });
+        
+        popup.show();
+    }
+    
+    private void openDonation() {
+        Intent intent = new Intent(this, DonationActivity.class);
+        startActivity(intent);
+    }
+    
+    private void openFeedback() {
+        Intent intent = new Intent(Intent.ACTION_SENDTO);
+        intent.setData(Uri.parse("mailto:"));
+        intent.putExtra(Intent.EXTRA_EMAIL, new String[]{"feedback@你的域名.com"});
+        intent.putExtra(Intent.EXTRA_SUBJECT, "StealthRecorder 反馈");
+        try {
+            startActivity(intent);
+        } catch (Exception e) {
+            Toast.makeText(this, "未找到邮件应用", Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    private void showAbout() {
+        new android.app.AlertDialog.Builder(this)
+            .setTitle("关于 StealthRecorder")
+            .setMessage("版本: 1.0\n开发者: liusamye\n\n一款简洁高效的后台录音应用，支持折叠屏优化。")
+            .setPositiveButton("确定", null)
+            .show();
+    }
+    
+    private void openSettings() {
+        // 打开系统设置中的应用详情页
+        Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+        intent.setData(Uri.parse("package:" + getPackageName()));
+        startActivity(intent);
     }
     
     private void checkServiceStatus() {
         ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
         for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
             if (RecordingService.class.getName().equals(service.service.getClassName())) {
-                Log.d(TAG, "检测到录音服务正在运行");
+                LogUtil.d( "检测到录音服务正在运行");
                 isRecording = true;
                 updateUIForRecording();
                 return;
             }
         }
-        Log.d(TAG, "录音服务未运行");
+        LogUtil.d( "录音服务未运行");
     }
     
     private void updateUIForRecording() {
@@ -123,18 +192,18 @@ public class MainActivity extends Activity {
     
     private void startRecording() {
         try {
-            Log.d(TAG, "=== 开始录音 ===");
+            LogUtil.d("=== 开始录音 ===");
             
             // 检查是否已经在录音
             if (isRecording) {
-                Log.w(TAG, "已经在录音中，忽略重复启动");
+                LogUtil.w( "已经在录音中，忽略重复启动");
                 Toast.makeText(this, "已经在录音中", Toast.LENGTH_SHORT).show();
                 return;
             }
             
             // 检查权限
             if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-                Log.e(TAG, "录音权限未授予");
+                LogUtil.e( "录音权限未授予");
                 Toast.makeText(this, "需要录音权限", Toast.LENGTH_LONG).show();
                 return;
             }
@@ -142,33 +211,33 @@ public class MainActivity extends Activity {
             // 检查存储权限（Android 11+）
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 if (!Environment.isExternalStorageManager()) {
-                    Log.e(TAG, "存储权限未授予（Android 11+）");
+                    LogUtil.e( "存储权限未授予（Android 11+）");
                     Toast.makeText(this, "需要所有文件访问权限", Toast.LENGTH_LONG).show();
                     return;
                 }
             } else {
                 if (checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                    Log.e(TAG, "存储权限未授予");
+                    LogUtil.e( "存储权限未授予");
                     Toast.makeText(this, "需要存储权限", Toast.LENGTH_LONG).show();
                     return;
                 }
             }
             
-            Log.d(TAG, "权限检查通过");
+            LogUtil.d( "权限检查通过");
             
             // 请求音频焦点
             int result = audioManager.requestAudioFocus(null, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
-            Log.d(TAG, "音频焦点请求结果: " + result);
+            LogUtil.d( "音频焦点请求结果: " + result);
             
             // 启动服务
             Intent serviceIntent = new Intent(this, RecordingService.class);
-            Log.d(TAG, "创建服务Intent");
+            LogUtil.d( "创建服务Intent");
             
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                Log.d(TAG, "启动前台服务");
+                LogUtil.d( "启动前台服务");
                 startForegroundService(serviceIntent);
             } else {
-                Log.d(TAG, "启动普通服务");
+                LogUtil.d( "启动普通服务");
                 startService(serviceIntent);
             }
             
@@ -181,11 +250,11 @@ public class MainActivity extends Activity {
             
             // 最小化应用
             moveTaskToBack(true);
-            Log.d(TAG, "应用已最小化");
+            LogUtil.d( "应用已最小化");
             Toast.makeText(this, "录音已开始，应用已最小化", Toast.LENGTH_SHORT).show();
             
         } catch (Exception e) {
-            Log.e(TAG, "录音启动异常", e);
+            LogUtil.e( "录音启动异常", e);
             Toast.makeText(this, "录音启动失败: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
@@ -227,14 +296,14 @@ public class MainActivity extends Activity {
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putBoolean("isRecording", isRecording);
-        Log.d(TAG, "保存状态: isRecording=" + isRecording);
+        LogUtil.d( "保存状态: isRecording=" + isRecording);
     }
     
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
         isRecording = savedInstanceState.getBoolean("isRecording", false);
-        Log.d(TAG, "恢复状态: isRecording=" + isRecording);
+        LogUtil.d( "恢复状态: isRecording=" + isRecording);
         if (isRecording) {
             updateUIForRecording();
         }

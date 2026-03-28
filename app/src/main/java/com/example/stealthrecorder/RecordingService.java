@@ -23,12 +23,12 @@ public class RecordingService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.d(TAG, "Service onCreate");
+        LogUtil.d( "Service onCreate");
     }
     
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.d(TAG, "Service onStartCommand");
+        LogUtil.d( "Service onStartCommand");
         
         // 启动前台服务
         startForegroundService();
@@ -75,32 +75,32 @@ public class RecordingService extends Service {
             .build();
         
         startForeground(NOTIFICATION_ID, notification);
-        Log.d(TAG, "Foreground service started with notification");
+        LogUtil.d( "Foreground service started with notification");
     }
     
     private boolean startRecording() {
         try {
-            Log.d(TAG, "=== Service: 开始录音 ===");
+            LogUtil.d( "=== Service: 开始录音 ===");
             
             // 创建输出文件
             String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
             String fileName = "Note_" + timeStamp + ".m4a";
-            Log.d(TAG, "文件名: " + fileName);
+            LogUtil.d( "文件名: " + fileName);
             
             File recordsDir = new File(android.os.Environment.getExternalStorageDirectory(), "Recordings");
-            Log.d(TAG, "录音目录: " + recordsDir.getAbsolutePath());
+            LogUtil.d( "录音目录: " + recordsDir.getAbsolutePath());
             
             if (!recordsDir.exists()) {
                 boolean created = recordsDir.mkdirs();
-                Log.d(TAG, "创建目录结果: " + created);
+                LogUtil.d( "创建目录结果: " + created);
             }
             
             outputFile = new File(recordsDir, fileName).getAbsolutePath();
-            Log.d(TAG, "输出文件: " + outputFile);
+            LogUtil.d( "输出文件: " + outputFile);
             
             // 检查目录权限
-            Log.d(TAG, "目录可写: " + recordsDir.canWrite());
-            Log.d(TAG, "目录存在: " + recordsDir.exists());
+            LogUtil.d( "目录可写: " + recordsDir.canWrite());
+            LogUtil.d( "目录存在: " + recordsDir.exists());
             
             // 获取WakeLock
             PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
@@ -109,11 +109,11 @@ public class RecordingService extends Service {
                 "StealthRecorder:RecordingWakeLock"
             );
             wakeLock.acquire(10 * 60 * 1000L);
-            Log.d(TAG, "WakeLock获取成功");
+            LogUtil.d( "WakeLock获取成功");
             
             // 初始化MediaRecorder
             mediaRecorder = new MediaRecorder();
-            Log.d(TAG, "MediaRecorder创建成功");
+            LogUtil.d( "MediaRecorder创建成功");
             
             mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
             mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
@@ -122,26 +122,26 @@ public class RecordingService extends Service {
             mediaRecorder.setAudioEncodingBitRate(64000);
             mediaRecorder.setOutputFile(outputFile);
             
-            Log.d(TAG, "MediaRecorder配置完成");
+            LogUtil.d( "MediaRecorder配置完成");
             mediaRecorder.prepare();
-            Log.d(TAG, "MediaRecorder准备完成");
+            LogUtil.d( "MediaRecorder准备完成");
             
             mediaRecorder.start();
-            Log.d(TAG, "Recording started: " + outputFile);
+            LogUtil.d( "Recording started: " + outputFile);
             isRecording = true;
             
             // 立即检查文件大小
             File file = new File(outputFile);
             if (file.exists()) {
-                Log.d(TAG, "文件已创建，大小: " + file.length() + " bytes");
+                LogUtil.d( "文件已创建，大小: " + file.length() + " bytes");
             } else {
-                Log.e(TAG, "文件未创建!");
+                LogUtil.e( "文件未创建!");
             }
             
             return true;
             
         } catch (Exception e) {
-            Log.e(TAG, "Failed to start recording", e);
+            LogUtil.e( "Failed to start recording", e);
             e.printStackTrace();
             return false;
         }
@@ -149,58 +149,58 @@ public class RecordingService extends Service {
     
     @Override
     public void onDestroy() {
-        Log.d(TAG, "Service onDestroy");
+        LogUtil.d( "Service onDestroy");
         stopRecording();
         super.onDestroy();
     }
     
     private void stopRecording() {
-        Log.d(TAG, "=== Service: 停止录音 ===");
+        LogUtil.d( "=== Service: 停止录音 ===");
         
         if (!isRecording) {
-            Log.w(TAG, "录音未开始，无需停止");
+            LogUtil.w( "录音未开始，无需停止");
             return;
         }
         
         if (mediaRecorder != null) {
             try {
-                Log.d(TAG, "停止MediaRecorder...");
+                LogUtil.d( "停止MediaRecorder...");
                 mediaRecorder.stop();
-                Log.d(TAG, "MediaRecorder已停止");
+                LogUtil.d( "MediaRecorder已停止");
                 mediaRecorder.release();
-                Log.d(TAG, "MediaRecorder已释放");
-                Log.d(TAG, "Recording stopped: " + outputFile);
+                LogUtil.d( "MediaRecorder已释放");
+                LogUtil.d( "Recording stopped: " + outputFile);
             } catch (Exception e) {
-                Log.e(TAG, "Error stopping recording", e);
+                LogUtil.e( "Error stopping recording", e);
                 e.printStackTrace();
             }
             mediaRecorder = null;
         } else {
-            Log.w(TAG, "mediaRecorder为null，无法停止");
+            LogUtil.w( "mediaRecorder为null，无法停止");
         }
         
         isRecording = false;
         
         if (wakeLock != null && wakeLock.isHeld()) {
             wakeLock.release();
-            Log.d(TAG, "WakeLock released");
+            LogUtil.d( "WakeLock released");
         } else {
-            Log.w(TAG, "WakeLock未持有或为null");
+            LogUtil.w( "WakeLock未持有或为null");
         }
         
         // 检查最终文件大小
         if (outputFile != null) {
             File file = new File(outputFile);
             if (file.exists()) {
-                Log.d(TAG, "最终文件大小: " + file.length() + " bytes, 路径: " + outputFile);
+                LogUtil.d( "最终文件大小: " + file.length() + " bytes, 路径: " + outputFile);
                 if (file.length() <= 1024) { // 小于1KB
-                    Log.e(TAG, "警告：文件大小异常小，可能录音失败");
+                    LogUtil.e( "警告：文件大小异常小，可能录音失败");
                 }
             } else {
-                Log.e(TAG, "文件不存在: " + outputFile);
+                LogUtil.e( "文件不存在: " + outputFile);
             }
         } else {
-            Log.w(TAG, "outputFile为null");
+            LogUtil.w( "outputFile为null");
         }
     }
     

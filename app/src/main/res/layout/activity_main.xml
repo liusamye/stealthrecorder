@@ -9,16 +9,33 @@
     android:background="#F5F5F5"
     tools:context=".MainActivity">
 
-    <!-- 应用标题 -->
-    <TextView
-        android:id="@+id/titleText"
-        android:layout_width="wrap_content"
+    <!-- 标题栏 -->
+    <RelativeLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="📝 笔记助手"
-        android:textSize="28sp"
-        android:textStyle="bold"
-        android:textColor="#333333"
-        android:layout_marginTop="40dp" />
+        android:layout_marginTop="40dp">
+
+        <TextView
+            android:id="@+id/titleText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="📝 笔记助手"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:textColor="#333333"
+            android:layout_centerHorizontal="true" />
+
+        <Button
+            android:id="@+id/menuButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_alignParentEnd="true"
+            android:background="?android:attr/selectableItemBackground"
+            android:contentDescription="菜单"
+            android:text="⋮"
+            android:textSize="24sp" />
+
+    </RelativeLayout>
 
     <TextView
         android:id="@+id/subtitleText"
