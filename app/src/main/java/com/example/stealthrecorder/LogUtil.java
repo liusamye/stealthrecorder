@@ -3,30 +3,25 @@ package com.example.stealthrecorder;
 import android.util.Log;
 
 public class LogUtil {
-    private static final boolean DEBUG = BuildConfig.DEBUG;
-    private static final String TAG = "StealthRecorder";
-    
+    // 简化版本，避免BuildConfig问题
     public static void d(String message) {
-        if (DEBUG) {
-            LogUtil.d( message);
-        }
+        // 发布版本中禁用debug日志
+        // Log.d("StealthRecorder", message);
     }
     
     public static void i(String message) {
-        if (DEBUG) {
-            LogUtil.i( message);
-        }
+        // 发布版本中禁用了info日志
     }
     
     public static void w(String message) {
-        LogUtil.w( message);
+        Log.w("StealthRecorder", message);
     }
     
     public static void e(String message) {
-        LogUtil.e( message);
+        Log.e("StealthRecorder", message);
     }
     
     public static void e(String message, Throwable t) {
-        LogUtil.e( message, t);
+        Log.e("StealthRecorder", message, t);
     }
 }

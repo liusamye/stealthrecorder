@@ -100,7 +100,8 @@ public class MainActivity extends Activity {
         });
         
         // 检查服务是否正在运行（Activity恢复时）
-        checkServiceStatus();
+        // 暂时禁用，避免权限问题导致崩溃
+        // checkServiceStatus();
     }
     
     private void showMenu(View anchor) {
@@ -164,16 +165,26 @@ public class MainActivity extends Activity {
     }
     
     private void checkServiceStatus() {
-        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
-        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-            if (RecordingService.class.getName().equals(service.service.getClassName())) {
-                LogUtil.d( "检测到录音服务正在运行");
-                isRecording = true;
-                updateUIForRecording();
-                return;
+        try {
+            // 使用更安全的方法检查服务状态
+            ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+            if (manager != null) {
+                for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+                    if (RecordingService.class.getName().equals(service.service.getClassName())) {
+                        LogUtil.d("检测到录音服务正在运行");
+                        isRecording = true;
+                        updateUIForRecording();
+                        return;
+                    }
+                }
             }
+            LogUtil.d("录音服务未运行");
+        } catch (SecurityException e) {
+            // 如果没有权限，忽略错误
+            LogUtil.e("检查服务状态时权限不足", e);
+        } catch (Exception e) {
+            LogUtil.e("检查服务状态时出错", e);
         }
-        LogUtil.d( "录音服务未运行");
     }
     
     private void updateUIForRecording() {
@@ -313,7 +324,8 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         // 每次回到前台时检查服务状态
-        checkServiceStatus();
+        // 暂时禁用，避免权限问题导致崩溃
+        // checkServiceStatus();
     }
     
     @Override

@@ -16,6 +16,10 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="29" />
     
+    <!-- 检查运行中服务需要的权限（可选） -->
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions" />
+    
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
