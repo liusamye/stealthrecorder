@@ -113,13 +113,13 @@ public class DonationActivity extends Activity {
     
     private void openPaypal() {
         Intent intent = new Intent(Intent.ACTION_VIEW);
-        intent.setData(Uri.parse("https://www.paypal.com/paypalme/你的PayPal账号"));
+        intent.setData(Uri.parse("https://www.paypal.com/paypalme/liusamye"));
         startActivity(intent);
     }
     
     private void openWebsite() {
         Intent intent = new Intent(Intent.ACTION_VIEW);
-        intent.setData(Uri.parse("https://你的域名.com"));
+        intent.setData(Uri.parse("http://124.70.136.239"));
         startActivity(intent);
     }
 }

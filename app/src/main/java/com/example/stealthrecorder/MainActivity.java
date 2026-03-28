@@ -169,7 +169,7 @@ public class MainActivity extends Activity {
     
     private void openWebsite() {
         Intent intent = new Intent(Intent.ACTION_VIEW);
-        intent.setData(Uri.parse("https://你的域名.com"));
+        intent.setData(Uri.parse("http://124.70.136.239"));
         try {
             startActivity(intent);
         } catch (Exception e) {
