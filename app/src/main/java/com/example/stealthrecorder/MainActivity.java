@@ -168,13 +168,24 @@ public class MainActivity extends Activity {
     }
     
     private void openWebsite() {
-        Intent intent = new Intent(Intent.ACTION_VIEW);
-        intent.setData(Uri.parse("http://124.70.136.239"));
-        try {
-            startActivity(intent);
-        } catch (Exception e) {
-            Toast.makeText(this, "无法打开浏览器", Toast.LENGTH_SHORT).show();
+        // 尝试多个端口
+        String[] urls = {
+            "http://124.70.136.239",
+            "http://124.70.136.239:8080",
+            "http://124.70.136.239:8888"
+        };
+        
+        for (String url : urls) {
+            try {
+                Intent intent = new Intent(Intent.ACTION_VIEW);
+                intent.setData(Uri.parse(url));
+                startActivity(intent);
+                return;
+            } catch (Exception e) {
+                // 继续尝试下一个
+            }
         }
+        Toast.makeText(this, "无法打开官网", Toast.LENGTH_SHORT).show();
     }
     
     private void checkServiceStatus() {
