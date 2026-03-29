@@ -16,7 +16,7 @@
     <string name="file_info_recording">⏺️ 正在录音...</string>
     <string name="file_info_saved">📁 保存到: %s</string>
     <string name="open_folder_button">📁 打开录音文件夹</string>
-    <string name="hint_text">💡 长按录音按钮查看详细说明</string>
+
     
     <!-- 菜单项 -->
     <string name="menu_donate">💝 打赏</string>
@@ -78,7 +78,7 @@
     <string name="settings_notifications">通知</string>
     
     <!-- 关于页面 -->
-    <string name="about_title">关于隐秘录音器</string>
+    <string name="about_title">关于语音备忘录</string>
     <string name="about_version">版本: %s</string>
     <string name="about_description">一款注重隐私的语音录音应用，支持后台录音。</string>
     <string name="about_developer">开发者: liusamye</string>

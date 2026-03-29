@@ -16,6 +16,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.provider.Settings;
+import androidx.core.content.FileProvider;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -170,11 +171,76 @@ public class MainActivity extends Activity {
     }
     
     private void showAbout() {
-        new android.app.AlertDialog.Builder(this)
-            .setTitle("关于 StealthRecorder")
-            .setMessage("版本: 1.0\n开发者: liusamye\n\n一款简洁高效的后台录音应用，支持折叠屏优化。")
-            .setPositiveButton("确定", null)
-            .show();
+        // 使用自定义布局创建关于对话框
+        View aboutView = getLayoutInflater().inflate(R.layout.dialog_recording_warning, null);
+        TextView messageText = aboutView.findViewById(R.id.dialog_message);
+        CheckBox dontShowCheckbox = aboutView.findViewById(R.id.dont_show_checkbox);
+        
+        // 隐藏勾选框
+        dontShowCheckbox.setVisibility(View.GONE);
+        
+        // 设置关于信息
+        String versionName = "1.3";
+        String aboutMessage = String.format(getString(R.string.about_version), versionName) + 
+                             "\n\n开发者: liusamye" +
+                             "\n\n一款简洁高效的后台录音应用，支持折叠屏优化。";
+        
+        messageText.setText(aboutMessage);
+        
+        // 创建对话框
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(getString(R.string.about_title));
+        builder.setView(aboutView);
+        
+        // 添加点击监听器用于隐藏功能
+        final int[] clickCount = {0};
+        final long[] lastClickTime = {0};
+        
+        messageText.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                long currentTime = System.currentTimeMillis();
+                
+                // 检查是否在短时间内连续点击
+                if (currentTime - lastClickTime[0] < 1000) { // 1秒内
+                    clickCount[0]++;
+                    
+                    // 检查是否连续点击了3次
+                    if (clickCount[0] >= 3) {
+                        // 切换调试模式
+                        SharedPreferences prefs = getSharedPreferences("debug_settings", Context.MODE_PRIVATE);
+                        boolean debugMode = prefs.getBoolean("hide_notification_mode", false);
+                        boolean newDebugMode = !debugMode;
+                        
+                        SharedPreferences.Editor editor = prefs.edit();
+                        editor.putBoolean("hide_notification_mode", newDebugMode);
+                        editor.apply();
+                        
+                        // 重置点击计数
+                        clickCount[0] = 0;
+                        
+                        // 静默切换，不显示任何提示
+                        LogUtil.d("调试模式已" + (newDebugMode ? "开启" : "关闭"));
+                    }
+                } else {
+                    // 重置点击计数
+                    clickCount[0] = 1;
+                }
+                
+                lastClickTime[0] = currentTime;
+            }
+        });
+        
+        builder.setPositiveButton(getString(android.R.string.ok), new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+        
+        builder.setCancelable(true);
+        AlertDialog dialog = builder.create();
+        dialog.show();
     }
     
     private void openSettings() {
@@ -262,15 +328,40 @@ public class MainActivity extends Activity {
                 recordsDir.mkdirs();
             }
             
-            Intent intent = new Intent(Intent.ACTION_VIEW);
-            intent.setDataAndType(Uri.fromFile(recordsDir), "resource/folder");
+            // 使用更可靠的方式打开文件管理器
+            // 方法1：使用ACTION_VIEW和文件URI（Android 7.0+需要FileProvider）
+            Uri folderUri;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                // Android 7.0+需要使用FileProvider
+                folderUri = FileProvider.getUriForFile(this, 
+                    getApplicationContext().getPackageName() + ".provider", 
+                    recordsDir);
+            } else {
+                folderUri = Uri.fromFile(recordsDir);
+            }
             
-            // 尝试使用文件管理器打开
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setDataAndType(folderUri, "resource/folder");
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            
+            // 方法2：备用方案，使用更通用的文件管理器Intent
+            Intent fallbackIntent = new Intent(Intent.ACTION_GET_CONTENT);
+            fallbackIntent.setType("*/*");
+            fallbackIntent.addCategory(Intent.CATEGORY_OPENABLE);
+            fallbackIntent.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
+            
+            // 尝试第一种方法
             if (intent.resolveActivity(getPackageManager()) != null) {
                 startActivity(intent);
                 Toast.makeText(this, getString(R.string.toast_folder_opened), Toast.LENGTH_SHORT).show();
-            } else {
-                // 备用方案：显示路径
+            } 
+            // 尝试第二种方法
+            else if (fallbackIntent.resolveActivity(getPackageManager()) != null) {
+                startActivity(fallbackIntent);
+                Toast.makeText(this, getString(R.string.toast_folder_opened), Toast.LENGTH_SHORT).show();
+            } 
+            // 备用方案：显示路径
+            else {
                 Toast.makeText(this, getString(R.string.file_info_saved, recordsDir.getAbsolutePath()), Toast.LENGTH_LONG).show();
             }
         } catch (Exception e) {
