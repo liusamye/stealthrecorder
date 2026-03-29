@@ -2,7 +2,11 @@ package com.example.stealthrecorder;
 
 import android.app.Activity;
 import android.app.ActivityManager;
+import android.app.AlertDialog;
+import android.app.NotificationManager;
+import android.app.StatusBarNotification;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
@@ -89,7 +93,7 @@ public class MainActivity extends Activity {
                 if (isRecording) {
                     stopRecording();
                 } else {
-                    startRecording();
+                    showRecordingWarningDialog();
                 }
             }
         });
@@ -112,8 +116,8 @@ public class MainActivity extends Activity {
         });
         
         // 检查服务是否正在运行（Activity恢复时）
-        // 暂时禁用，避免权限问题导致崩溃
-        // checkServiceStatus();
+        // 当用户从通知点击返回时，需要更新UI状态
+        checkServiceStatus();
     }
     
     private void showMenu(View anchor) {
@@ -224,26 +228,66 @@ public class MainActivity extends Activity {
         }
     }
     
+    private void showRecordingWarningDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(getString(R.string.status_recording));
+        builder.setMessage(getString(R.string.dialog_recording_warning));
+        
+        builder.setPositiveButton(getString(R.string.dialog_confirm), new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                // 用户确认，开始录音
+                startRecording();
+            }
+        });
+        
+        builder.setNegativeButton(getString(R.string.dialog_cancel), new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                // 用户取消，不做任何操作
+                dialog.dismiss();
+            }
+        });
+        
+        builder.setCancelable(true);
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+    
     private void checkServiceStatus() {
+        // 使用标志位来跟踪服务状态
+        // 当用户从通知返回时，假设服务正在运行
+        // 实际状态由服务启动/停止时更新
+        
+        // 简单方法：检查是否有前台通知
+        // 如果有通知，假设服务正在运行
         try {
-            // 使用更安全的方法检查服务状态
-            ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
-            if (manager != null) {
-                for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-                    if (RecordingService.class.getName().equals(service.service.getClassName())) {
-                        LogUtil.d("检测到录音服务正在运行");
-                        isRecording = true;
-                        updateUIForRecording();
-                        return;
-                    }
+            NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            StatusBarNotification[] notifications = notificationManager.getActiveNotifications();
+            
+            boolean foundRecordingNotification = false;
+            for (StatusBarNotification notification : notifications) {
+                if (notification.getId() == 1001) { // RecordingService的通知ID
+                    foundRecordingNotification = true;
+                    break;
                 }
             }
-            LogUtil.d("录音服务未运行");
-        } catch (SecurityException e) {
-            // 如果没有权限，忽略错误
-            LogUtil.e("检查服务状态时权限不足", e);
+            
+            if (foundRecordingNotification) {
+                isRecording = true;
+                updateUIForRecording();
+                LogUtil.d("通过通知检测到录音服务正在运行");
+            } else {
+                isRecording = false;
+                updateUIForRecording();
+                LogUtil.d("未检测到录音服务通知");
+            }
+            
         } catch (Exception e) {
             LogUtil.e("检查服务状态时出错", e);
+            // 出错时默认设置为未录音
+            isRecording = false;
+            updateUIForRecording();
         }
     }
     
@@ -323,10 +367,18 @@ public class MainActivity extends Activity {
             // 启动计时器
             timerHandler.postDelayed(timerRunnable, 1000);
             
-            // 最小化应用
-            moveTaskToBack(true);
-            LogUtil.d( "应用已最小化");
-            Toast.makeText(this, getString(R.string.toast_recording_started), Toast.LENGTH_SHORT).show();
+            // 显示明确的提示信息
+            Toast.makeText(this, getString(R.string.toast_recording_started), Toast.LENGTH_LONG).show();
+            
+            // 延迟500ms后最小化应用，让用户看到提示
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    // 最小化应用
+                    moveTaskToBack(true);
+                    LogUtil.d( "应用已最小化");
+                }
+            }, 500);
             
         } catch (Exception e) {
             LogUtil.e( "录音启动异常", e);

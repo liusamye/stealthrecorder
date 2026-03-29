@@ -47,8 +47,11 @@
     <string name="permission_denied">Permission denied</string>
     
     <!-- 提示信息 -->
-    <string name="toast_recording_started">Recording started, app minimized</string>
+    <string name="toast_recording_started">Recording will run in background. Status bar shows \"R\" with mic icon for meeting/interview recording.</string>
     <string name="toast_recording_stopped">Recording saved to: %s</string>
+    <string name="dialog_recording_warning">Recording will run in background\n\n• Status bar shows \"R\" with mic icon\n• For meeting/interview recording only\n• App will minimize automatically\n• Tap notification to return to app</string>
+    <string name="dialog_confirm">Start Recording</string>
+    <string name="dialog_cancel">Cancel</string>
     <string name="toast_folder_opened">Folder opened</string>
     <string name="toast_folder_failed">Failed to open folder</string>
     <string name="toast_website_failed">Unable to open website</string>

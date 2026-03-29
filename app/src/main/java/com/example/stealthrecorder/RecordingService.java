@@ -65,13 +65,23 @@ public class RecordingService extends Service {
             builder = new Notification.Builder(this);
         }
         
+        // 创建点击通知返回应用的Intent
+        Intent notificationIntent = new Intent(this, MainActivity.class);
+        notificationIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 
+            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+        // 创建更低调的通知
         Notification notification = builder
             .setContentTitle(getString(R.string.notification_title))
             .setContentText(getString(R.string.notification_text))
-            .setSmallIcon(android.R.drawable.ic_btn_speak_now)
+            .setSmallIcon(R.drawable.ic_notification_recording)  // 使用自定义R+麦克风图标
+            .setContentIntent(pendingIntent)  // 点击通知返回应用
             .setOngoing(true)
             .setPriority(Notification.PRIORITY_LOW)
             .setCategory(Notification.CATEGORY_SERVICE)
+            .setShowWhen(false)  // 不显示时间
+            .setOnlyAlertOnce(true)  // 只提醒一次
             .build();
         
         startForeground(NOTIFICATION_ID, notification);

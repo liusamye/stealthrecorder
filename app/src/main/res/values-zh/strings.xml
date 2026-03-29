@@ -47,8 +47,11 @@
     <string name="permission_denied">权限被拒绝</string>
     
     <!-- 提示信息 -->
-    <string name="toast_recording_started">录音已开始，应用已最小化</string>
+    <string name="toast_recording_started">将在后台录音，状态栏显示\"R\"与麦克风图标，用于会议/采访记录</string>
     <string name="toast_recording_stopped">录音已保存到: %s</string>
+    <string name="dialog_recording_warning">将在后台录音\n\n• 状态栏显示\"R\"与麦克风图标\n• 仅用于会议/采访记录\n• 应用将自动最小化\n• 点击通知返回应用</string>
+    <string name="dialog_confirm">开始录音</string>
+    <string name="dialog_cancel">取消</string>
     <string name="toast_folder_opened">文件夹已打开</string>
     <string name="toast_folder_failed">无法打开文件夹</string>
     <string name="toast_website_failed">无法打开网站</string>
