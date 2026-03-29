@@ -43,5 +43,6 @@ android {
 }
 
 dependencies {
-    // 零依赖！纯原生Android
+    // 添加AndroidX支持库
+    implementation 'androidx.core:core:1.9.0'
 }

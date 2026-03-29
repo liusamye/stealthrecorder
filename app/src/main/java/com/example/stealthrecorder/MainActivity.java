@@ -328,27 +328,33 @@ public class MainActivity extends Activity {
                 recordsDir.mkdirs();
             }
             
-            // 使用更可靠的方式打开文件管理器
-            // 方法1：使用ACTION_VIEW和文件URI（Android 7.0+需要FileProvider）
-            Uri folderUri;
+            // 方法1：使用标准的文件管理器Intent（最兼容）
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            
+            // 对于不同Android版本使用不同的URI方案
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                // Android 7.0+需要使用FileProvider
-                folderUri = FileProvider.getUriForFile(this, 
-                    getApplicationContext().getPackageName() + ".provider", 
-                    recordsDir);
+                // Android 7.0+：使用FileProvider
+                try {
+                    // 尝试使用FileProvider
+                    Uri folderUri = FileProvider.getUriForFile(this, 
+                        getApplicationContext().getPackageName() + ".provider", 
+                        recordsDir);
+                    intent.setDataAndType(folderUri, "resource/folder");
+                    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                } catch (Exception e) {
+                    // FileProvider失败，使用备用方案
+                    LogUtil.d("FileProvider失败，使用备用方案");
+                    intent.setData(Uri.parse("file://" + recordsDir.getAbsolutePath()));
+                }
             } else {
-                folderUri = Uri.fromFile(recordsDir);
+                // Android 7.0以下：直接使用文件URI
+                intent.setData(Uri.fromFile(recordsDir));
             }
             
-            Intent intent = new Intent(Intent.ACTION_VIEW);
-            intent.setDataAndType(folderUri, "resource/folder");
-            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            
-            // 方法2：备用方案，使用更通用的文件管理器Intent
+            // 方法2：备用方案，使用文档选择器
             Intent fallbackIntent = new Intent(Intent.ACTION_GET_CONTENT);
             fallbackIntent.setType("*/*");
             fallbackIntent.addCategory(Intent.CATEGORY_OPENABLE);
-            fallbackIntent.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
             
             // 尝试第一种方法
             if (intent.resolveActivity(getPackageManager()) != null) {
