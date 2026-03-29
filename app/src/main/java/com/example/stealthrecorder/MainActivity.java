@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.app.NotificationManager;
-import android.app.StatusBarNotification;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -255,32 +254,21 @@ public class MainActivity extends Activity {
     }
     
     private void checkServiceStatus() {
-        // 使用标志位来跟踪服务状态
-        // 当用户从通知返回时，假设服务正在运行
-        // 实际状态由服务启动/停止时更新
+        // 使用静态变量检查服务状态
+        // 这是最简单且没有权限问题的方法
         
-        // 简单方法：检查是否有前台通知
-        // 如果有通知，假设服务正在运行
         try {
-            NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-            StatusBarNotification[] notifications = notificationManager.getActiveNotifications();
+            // 检查RecordingService的静态变量
+            boolean serviceRunning = RecordingService.isServiceRunning();
             
-            boolean foundRecordingNotification = false;
-            for (StatusBarNotification notification : notifications) {
-                if (notification.getId() == 1001) { // RecordingService的通知ID
-                    foundRecordingNotification = true;
-                    break;
-                }
-            }
-            
-            if (foundRecordingNotification) {
+            if (serviceRunning) {
                 isRecording = true;
                 updateUIForRecording();
-                LogUtil.d("通过通知检测到录音服务正在运行");
+                LogUtil.d("检测到录音服务正在运行（通过静态变量）");
             } else {
                 isRecording = false;
                 updateUIForRecording();
-                LogUtil.d("未检测到录音服务通知");
+                LogUtil.d("录音服务未运行");
             }
             
         } catch (Exception e) {

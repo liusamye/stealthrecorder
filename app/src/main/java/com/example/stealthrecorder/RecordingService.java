@@ -15,6 +15,9 @@ public class RecordingService extends Service {
     private static final String TAG = "RecordingService";
     private static final int NOTIFICATION_ID = 1001;
     
+    // 静态变量跟踪服务状态
+    private static boolean isServiceRunning = false;
+    
     private MediaRecorder mediaRecorder;
     private String outputFile;
     private PowerManager.WakeLock wakeLock;
@@ -29,6 +32,9 @@ public class RecordingService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         LogUtil.d( "Service onStartCommand");
+        
+        // 更新服务状态
+        isServiceRunning = true;
         
         // 启动前台服务
         startForegroundService();
@@ -161,7 +167,16 @@ public class RecordingService extends Service {
     public void onDestroy() {
         LogUtil.d( "Service onDestroy");
         stopRecording();
+        
+        // 更新服务状态
+        isServiceRunning = false;
+        
         super.onDestroy();
+    }
+    
+    // 静态方法供外部检查服务状态
+    public static boolean isServiceRunning() {
+        return isServiceRunning;
     }
     
     private void stopRecording() {
