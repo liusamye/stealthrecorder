@@ -49,18 +49,24 @@ public class RecordingService extends Service {
     }
     
     private void startForegroundService() {
-        // 创建通知渠道（Android 8.0+要求）
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                "recording_channel",
-                getString(R.string.notification_channel_name),
-                NotificationManager.IMPORTANCE_LOW
-            );
-            channel.setDescription(getString(R.string.notification_channel_description));
-            channel.setShowBadge(false);
-            
-            NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-            manager.createNotificationChannel(channel);
+        LogUtil.d("开始启动前台服务...");
+        
+        // 确保通知渠道存在
+        createNotificationChannel();
+        
+        // 创建点击通知返回应用的Intent
+        Intent notificationIntent = new Intent(this, MainActivity.class);
+        notificationIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent pendingIntent = null;
+        
+        try {
+            int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                flags |= PendingIntent.FLAG_IMMUTABLE;
+            }
+            pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, flags);
+        } catch (Exception e) {
+            LogUtil.e("创建PendingIntent失败", e);
         }
         
         // 创建通知
@@ -71,27 +77,73 @@ public class RecordingService extends Service {
             builder = new Notification.Builder(this);
         }
         
-        // 创建点击通知返回应用的Intent
-        Intent notificationIntent = new Intent(this, MainActivity.class);
-        notificationIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 
-            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-
-        // 创建更低调的通知
-        Notification notification = builder
-            .setContentTitle(getString(R.string.notification_title))
-            .setContentText(getString(R.string.notification_text))
-            .setSmallIcon(R.drawable.ic_notification_recording)  // 使用自定义R+麦克风图标
-            .setContentIntent(pendingIntent)  // 点击通知返回应用
-            .setOngoing(true)
-            .setPriority(Notification.PRIORITY_LOW)
-            .setCategory(Notification.CATEGORY_SERVICE)
-            .setShowWhen(false)  // 不显示时间
-            .setOnlyAlertOnce(true)  // 只提醒一次
-            .build();
+        // 构建通知
+        builder.setContentTitle(getString(R.string.notification_title))
+               .setContentText(getString(R.string.notification_text))
+               .setSmallIcon(R.drawable.ic_notification_recording)
+               .setOngoing(true)
+               .setCategory(Notification.CATEGORY_SERVICE)
+               .setShowWhen(false)
+               .setOnlyAlertOnce(true);
         
-        startForeground(NOTIFICATION_ID, notification);
-        LogUtil.d( "Foreground service started with notification");
+        // 设置点击意图
+        if (pendingIntent != null) {
+            builder.setContentIntent(pendingIntent);
+        }
+        
+        // 设置优先级
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            builder.setPriority(NotificationManager.IMPORTANCE_LOW);
+        } else {
+            builder.setPriority(Notification.PRIORITY_LOW);
+        }
+        
+        Notification notification = builder.build();
+        
+        // 启动前台服务
+        try {
+            startForeground(NOTIFICATION_ID, notification);
+            LogUtil.d("✅ 前台服务已成功启动，通知ID: " + NOTIFICATION_ID);
+        } catch (Exception e) {
+            LogUtil.e("❌ 启动前台服务失败", e);
+            // 尝试重新创建通知渠道并重试
+            createNotificationChannel();
+            try {
+                startForeground(NOTIFICATION_ID, notification);
+                LogUtil.d("✅ 重新启动前台服务成功");
+            } catch (Exception e2) {
+                LogUtil.e("❌ 重新启动前台服务也失败", e2);
+            }
+        }
+    }
+    
+    private void createNotificationChannel() {
+        // 创建通知渠道（Android 8.0+要求）
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            try {
+                NotificationChannel channel = new NotificationChannel(
+                    "recording_channel",
+                    getString(R.string.notification_channel_name),
+                    NotificationManager.IMPORTANCE_LOW
+                );
+                channel.setDescription(getString(R.string.notification_channel_description));
+                channel.setShowBadge(false);
+                channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
+                channel.enableLights(false);
+                channel.enableVibration(false);
+                channel.setSound(null, null);
+                
+                NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+                if (manager != null) {
+                    manager.createNotificationChannel(channel);
+                    LogUtil.d("✅ 通知渠道创建成功: recording_channel");
+                } else {
+                    LogUtil.e("❌ 无法获取NotificationManager");
+                }
+            } catch (Exception e) {
+                LogUtil.e("❌ 创建通知渠道失败", e);
+            }
+        }
     }
     
     private boolean startRecording() {

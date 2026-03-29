@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- 应用名称 -->
-    <string name="app_name">StealthRecorder</string>
+    <string name="app_name">Voice Memo</string>
     <string name="app_subtitle">Voice Memo Assistant</string>
     
     <!-- 主界面 -->
-    <string name="title_text">📝 Note Assistant</string>
+    <string name="title_text">📝 Voice Memo</string>
     <string name="status_ready">🟢 Ready</string>
     <string name="status_recording">🔴 Recording...</string>
     <string name="status_saved">🟢 Note Saved</string>
@@ -35,7 +35,7 @@
     <string name="back_button">← Back</string>
     
     <!-- 通知 -->
-    <string name="notification_channel_name">Recording Service</string>
+    <string name="notification_channel_name">Voice Memo Service</string>
     <string name="notification_channel_description">Voice memo recording service</string>
     <string name="notification_title">Voice Memo - Recording</string>
     <string name="notification_text">Tap to return to app</string>
@@ -52,6 +52,7 @@
     <string name="dialog_recording_warning">Recording will run in background\n\n• Status bar shows \"R\" with mic icon\n• For meeting/interview recording only\n• App will minimize automatically\n• Tap notification to return to app</string>
     <string name="dialog_confirm">Start Recording</string>
     <string name="dialog_cancel">Cancel</string>
+    <string name="dialog_dont_show_again">Don\'t show this again</string>
     <string name="toast_folder_opened">Folder opened</string>
     <string name="toast_folder_failed">Failed to open folder</string>
     <string name="toast_website_failed">Unable to open website</string>

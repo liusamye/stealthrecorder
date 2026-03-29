@@ -7,6 +7,7 @@ import android.app.NotificationManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.net.Uri;
@@ -18,6 +19,7 @@ import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -176,10 +178,60 @@ public class MainActivity extends Activity {
     }
     
     private void openSettings() {
-        // 打开系统设置中的应用详情页
-        Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-        intent.setData(Uri.parse("package:" + getPackageName()));
-        startActivity(intent);
+        // 创建简单的应用设置对话框
+        View settingsView = getLayoutInflater().inflate(R.layout.dialog_recording_warning, null);
+        TextView messageText = settingsView.findViewById(R.id.dialog_message);
+        CheckBox dontShowCheckbox = settingsView.findViewById(R.id.dont_show_checkbox);
+        
+        messageText.setText("应用设置");
+        dontShowCheckbox.setText("显示录音警告对话框");
+        
+        // 读取当前设置
+        SharedPreferences prefs = getSharedPreferences("app_settings", Context.MODE_PRIVATE);
+        boolean dontShowWarning = prefs.getBoolean("dont_show_recording_warning", false);
+        dontShowCheckbox.setChecked(!dontShowWarning); // 反选：勾选=显示，不勾选=不显示
+        
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("设置");
+        builder.setView(settingsView);
+        
+        builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                // 保存用户选择
+                boolean showWarning = dontShowCheckbox.isChecked();
+                SharedPreferences.Editor editor = prefs.edit();
+                editor.putBoolean("dont_show_recording_warning", !showWarning); // 反选保存
+                editor.apply();
+                
+                if (showWarning) {
+                    Toast.makeText(MainActivity.this, "已启用录音警告对话框", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(MainActivity.this, "已禁用录音警告对话框", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+        
+        builder.setNegativeButton("取消", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+        
+        builder.setNeutralButton("系统设置", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                // 打开系统设置中的应用详情页
+                Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                intent.setData(Uri.parse("package:" + getPackageName()));
+                startActivity(intent);
+            }
+        });
+        
+        builder.setCancelable(true);
+        AlertDialog dialog = builder.create();
+        dialog.show();
     }
     
     private void openWebsite() {
@@ -228,13 +280,39 @@ public class MainActivity extends Activity {
     }
     
     private void showRecordingWarningDialog() {
+        // 检查用户是否选择了"不再显示"
+        SharedPreferences prefs = getSharedPreferences("app_settings", Context.MODE_PRIVATE);
+        boolean dontShowAgain = prefs.getBoolean("dont_show_recording_warning", false);
+        
+        if (dontShowAgain) {
+            // 用户选择了不再显示，直接开始录音
+            startRecording();
+            return;
+        }
+        
+        // 使用自定义布局创建对话框
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_recording_warning, null);
+        TextView messageText = dialogView.findViewById(R.id.dialog_message);
+        CheckBox dontShowCheckbox = dialogView.findViewById(R.id.dont_show_checkbox);
+        
+        messageText.setText(getString(R.string.dialog_recording_warning));
+        dontShowCheckbox.setText(getString(R.string.dialog_dont_show_again));
+        
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(getString(R.string.status_recording));
-        builder.setMessage(getString(R.string.dialog_recording_warning));
+        builder.setView(dialogView);
         
         builder.setPositiveButton(getString(R.string.dialog_confirm), new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
+                // 保存用户选择
+                if (dontShowCheckbox.isChecked()) {
+                    SharedPreferences.Editor editor = prefs.edit();
+                    editor.putBoolean("dont_show_recording_warning", true);
+                    editor.apply();
+                    LogUtil.d("用户选择不再显示录音警告对话框");
+                }
+                
                 // 用户确认，开始录音
                 startRecording();
             }

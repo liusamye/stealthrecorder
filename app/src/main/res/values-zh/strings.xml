@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- 应用名称 -->
-    <string name="app_name">隐秘录音器</string>
+    <string name="app_name">语音备忘录</string>
     <string name="app_subtitle">语音备忘录助手</string>
     
     <!-- 主界面 -->
-    <string name="title_text">📝 笔记助手</string>
+    <string name="title_text">📝 语音备忘录</string>
     <string name="status_ready">🟢 准备就绪</string>
     <string name="status_recording">🔴 录音中...</string>
     <string name="status_saved">🟢 记录已保存</string>
@@ -35,7 +35,7 @@
     <string name="back_button">← 返回</string>
     
     <!-- 通知 -->
-    <string name="notification_channel_name">录音服务</string>
+    <string name="notification_channel_name">语音备忘录服务</string>
     <string name="notification_channel_description">语音备忘录录音服务</string>
     <string name="notification_title">语音备忘录 - 录音中</string>
     <string name="notification_text">点击返回应用</string>
@@ -52,6 +52,7 @@
     <string name="dialog_recording_warning">将在后台录音\n\n• 状态栏显示\"R\"与麦克风图标\n• 仅用于会议/采访记录\n• 应用将自动最小化\n• 点击通知返回应用</string>
     <string name="dialog_confirm">开始录音</string>
     <string name="dialog_cancel">取消</string>
+    <string name="dialog_dont_show_again">后续不再显示此提示</string>
     <string name="toast_folder_opened">文件夹已打开</string>
     <string name="toast_folder_failed">无法打开文件夹</string>
     <string name="toast_website_failed">无法打开网站</string>
