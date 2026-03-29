@@ -84,22 +84,5 @@
     <string name="recording_folder">VoiceMemos</string>
     <string name="file_name_format">Note_%s.m4a</string>
     
-    <!-- 设置页面 -->
-    <string name="settings_title">设置</string>
-    <string name="settings_audio_quality">音频质量</string>
-    <string name="settings_storage_location">存储位置</string>
-    <string name="settings_auto_start">自动开始录音</string>
-    <string name="settings_notifications">通知</string>
-    
-    <!-- 关于页面 -->
-    <string name="about_title">关于语音备忘录</string>
-    <string name="about_version">版本: %s</string>
-    <string name="about_description">一款注重隐私的语音录音应用，支持后台录音。</string>
-    <string name="about_developer">开发者: liusamye</string>
-    <string name="about_email">邮箱: liusamye@163.com</string>
-    <string name="about_website">网站: http://124.70.136.239</string>
-    
-    <!-- 长按提示 -->
-    <string name="long_press_title">使用说明</string>
-    <string name="long_press_content">1. 点击开始/停止录音\n2. 录音时应用最小化\n3. 文件保存到Recordings文件夹\n4. 访问菜单获取更多选项</string>
+
 </resources>
