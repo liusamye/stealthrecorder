@@ -84,10 +84,17 @@ public class RecordingService extends Service {
                .setOngoing(true)
                .setCategory(Notification.CATEGORY_SERVICE)
                .setShowWhen(false)  // 不显示时间
-               .setOnlyAlertOnce(true)
-               .setShowChronometer(false)  // 不显示计时器
-               .setUsesChronometer(false)  // 不使用计时器
-               .setSubText("");  // 不显示子文本
+               .setOnlyAlertOnce(true);
+        
+        // 兼容性处理：不显示计时器和子文本
+        // 通过不设置when时间戳来避免显示计时器
+        builder.setWhen(0);  // 设置为0，不显示时间
+        
+        // 不显示子文本 - 使用兼容性检查
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            // setSubText方法从API level 16开始可用
+            builder.setSubText("");
+        }
         
         // 设置点击意图
         if (pendingIntent != null) {
