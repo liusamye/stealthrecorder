@@ -16,7 +16,6 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.provider.Settings;
-import androidx.core.content.FileProvider;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -328,33 +327,33 @@ public class MainActivity extends Activity {
                 recordsDir.mkdirs();
             }
             
-            // 方法1：使用标准的文件管理器Intent（最兼容）
+            // 方法1：使用最兼容的方式 - 直接发送文件路径给文件管理器
+            // 很多文件管理器支持直接打开文件夹路径
             Intent intent = new Intent(Intent.ACTION_VIEW);
             
-            // 对于不同Android版本使用不同的URI方案
+            // 构建文件夹URI - 使用最兼容的方式
+            Uri folderUri;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                // Android 7.0+：使用FileProvider
-                try {
-                    // 尝试使用FileProvider
-                    Uri folderUri = FileProvider.getUriForFile(this, 
-                        getApplicationContext().getPackageName() + ".provider", 
-                        recordsDir);
-                    intent.setDataAndType(folderUri, "resource/folder");
-                    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                } catch (Exception e) {
-                    // FileProvider失败，使用备用方案
-                    LogUtil.d("FileProvider失败，使用备用方案");
-                    intent.setData(Uri.parse("file://" + recordsDir.getAbsolutePath()));
-                }
+                // Android 7.0+：使用content URI方案
+                // 注意：某些文件管理器可能不支持，但这是最兼容的方式
+                folderUri = Uri.parse("content://com.android.externalstorage.documents/tree/primary:" + 
+                    getString(R.string.recording_folder));
             } else {
                 // Android 7.0以下：直接使用文件URI
-                intent.setData(Uri.fromFile(recordsDir));
+                folderUri = Uri.fromFile(recordsDir);
             }
             
-            // 方法2：备用方案，使用文档选择器
+            intent.setDataAndType(folderUri, "resource/folder");
+            
+            // 方法2：备用方案 - 使用文档选择器（最通用）
             Intent fallbackIntent = new Intent(Intent.ACTION_GET_CONTENT);
             fallbackIntent.setType("*/*");
             fallbackIntent.addCategory(Intent.CATEGORY_OPENABLE);
+            fallbackIntent.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
+            
+            // 方法3：备用方案 - 使用系统文件管理器（如果可用）
+            Intent systemFileIntent = new Intent(Intent.ACTION_VIEW);
+            systemFileIntent.setData(Uri.parse("file://" + recordsDir.getAbsolutePath()));
             
             // 尝试第一种方法
             if (intent.resolveActivity(getPackageManager()) != null) {
@@ -365,7 +364,12 @@ public class MainActivity extends Activity {
             else if (fallbackIntent.resolveActivity(getPackageManager()) != null) {
                 startActivity(fallbackIntent);
                 Toast.makeText(this, getString(R.string.toast_folder_opened), Toast.LENGTH_SHORT).show();
-            } 
+            }
+            // 尝试第三种方法
+            else if (systemFileIntent.resolveActivity(getPackageManager()) != null) {
+                startActivity(systemFileIntent);
+                Toast.makeText(this, getString(R.string.toast_folder_opened), Toast.LENGTH_SHORT).show();
+            }
             // 备用方案：显示路径
             else {
                 Toast.makeText(this, getString(R.string.file_info_saved, recordsDir.getAbsolutePath()), Toast.LENGTH_LONG).show();
