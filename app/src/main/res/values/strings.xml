@@ -37,8 +37,8 @@
     <!-- 通知 -->
     <string name="notification_channel_name">Voice Memo Service</string>
     <string name="notification_channel_description">Voice memo recording service</string>
-    <string name="notification_title">Voice Memo - Recording</string>
-    <string name="notification_text">Tap to return to app</string>
+    <string name="notification_title">Recording</string>
+    <string name="notification_text"></string>
     
     <!-- 权限请求 -->
     <string name="permission_record_audio">Recording permission is required to use this app</string>
@@ -47,9 +47,9 @@
     <string name="permission_denied">Permission denied</string>
     
     <!-- 提示信息 -->
-    <string name="toast_recording_started">Recording will run in background. Status bar shows \"R\" with mic icon for meeting/interview recording.</string>
+    <string name="toast_recording_started">Recording will run in background with minimal notification.</string>
     <string name="toast_recording_stopped">Recording saved to: %s</string>
-    <string name="dialog_recording_warning">Recording will run in background\n\n• Status bar shows \"R\" with mic icon\n• For meeting/interview recording only\n• App will minimize automatically\n• Tap notification to return to app</string>
+    <string name="dialog_recording_warning">Recording will run in background\n\n• Status bar shows minimal notification\n• For meeting/interview recording only\n• App will minimize automatically\n• Tap notification to return to app</string>
     <string name="dialog_confirm">Start Recording</string>
     <string name="dialog_cancel">Cancel</string>
     <string name="dialog_dont_show_again">Don\'t show this again</string>

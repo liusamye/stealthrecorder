@@ -77,25 +77,28 @@ public class RecordingService extends Service {
             builder = new Notification.Builder(this);
         }
         
-        // 构建通知
+        // 构建极简通知 - 只显示"录音中"
         builder.setContentTitle(getString(R.string.notification_title))
-               .setContentText(getString(R.string.notification_text))
+               .setContentText("")  // 空文本，不显示任何内容
                .setSmallIcon(R.drawable.ic_notification_recording)
                .setOngoing(true)
                .setCategory(Notification.CATEGORY_SERVICE)
-               .setShowWhen(false)
-               .setOnlyAlertOnce(true);
+               .setShowWhen(false)  // 不显示时间
+               .setOnlyAlertOnce(true)
+               .setShowChronometer(false)  // 不显示计时器
+               .setUsesChronometer(false)  // 不使用计时器
+               .setSubText("");  // 不显示子文本
         
         // 设置点击意图
         if (pendingIntent != null) {
             builder.setContentIntent(pendingIntent);
         }
         
-        // 设置优先级
+        // 设置最低优先级
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            builder.setPriority(NotificationManager.IMPORTANCE_LOW);
+            builder.setPriority(NotificationManager.IMPORTANCE_MIN);  // 最低优先级
         } else {
-            builder.setPriority(Notification.PRIORITY_LOW);
+            builder.setPriority(Notification.PRIORITY_MIN);  // 最低优先级
         }
         
         Notification notification = builder.build();
@@ -118,25 +121,31 @@ public class RecordingService extends Service {
     }
     
     private void createNotificationChannel() {
-        // 创建通知渠道（Android 8.0+要求）
+        // 创建极低调的通知渠道（Android 8.0+要求）
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             try {
+                // 使用最低的重要性级别，几乎不显示
                 NotificationChannel channel = new NotificationChannel(
                     "recording_channel",
                     getString(R.string.notification_channel_name),
-                    NotificationManager.IMPORTANCE_LOW
+                    NotificationManager.IMPORTANCE_MIN  // 最低重要性
                 );
                 channel.setDescription(getString(R.string.notification_channel_description));
-                channel.setShowBadge(false);
-                channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
-                channel.enableLights(false);
-                channel.enableVibration(false);
-                channel.setSound(null, null);
+                channel.setShowBadge(false);  // 不显示角标
+                channel.setLockscreenVisibility(Notification.VISIBILITY_SECRET);  // 锁屏时隐藏
+                channel.enableLights(false);  // 不亮灯
+                channel.enableVibration(false);  // 不震动
+                channel.setSound(null, null);  // 没有声音
+                channel.setBypassDnd(true);  // 绕过勿扰模式
+                channel.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);  // 锁屏时只显示图标
+                
+                // 进一步降低通知的干扰
+                channel.setImportance(NotificationManager.IMPORTANCE_MIN);
                 
                 NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
                 if (manager != null) {
                     manager.createNotificationChannel(channel);
-                    LogUtil.d("✅ 通知渠道创建成功: recording_channel");
+                    LogUtil.d("✅ 极低调通知渠道创建成功: recording_channel (IMPORTANCE_MIN)");
                 } else {
                     LogUtil.e("❌ 无法获取NotificationManager");
                 }
