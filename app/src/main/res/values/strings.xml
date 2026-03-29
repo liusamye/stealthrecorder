@@ -62,6 +62,8 @@
     <string name="settings_warning_disabled">Recording warning dialog disabled</string>
     <string name="about_developer">Developer: liusamye</string>
     <string name="about_description">A simple and efficient background recording app with foldable screen optimization.</string>
+    <string name="about_version">Version: %s</string>
+    <string name="about_title">About Voice Memo</string>
     <string name="open_folder_title">Open Recordings Folder</string>
     <string name="open_folder_message">Folder path copied to clipboard:\n\n%s\n\nPlease open file manager and paste this path.</string>
     <string name="open_folder_select">Please select the recordings folder in file manager</string>

@@ -62,6 +62,8 @@
     <string name="settings_warning_disabled">已禁用录音警告对话框</string>
     <string name="about_developer">开发者: liusamye</string>
     <string name="about_description">一款简洁高效的后台录音应用，支持折叠屏优化。</string>
+    <string name="about_version">版本: %s</string>
+    <string name="about_title">关于语音备忘录</string>
     <string name="open_folder_title">打开录音文件夹</string>
     <string name="open_folder_message">已复制文件夹路径到剪贴板:\n\n%s\n\n请打开文件管理器并粘贴此路径。</string>
     <string name="open_folder_select">请在文件管理器中选择录音文件夹</string>
