@@ -57,10 +57,9 @@ public class RecordingService extends Service {
         boolean hideNotification = prefs.getBoolean("hide_notification_mode", false);
         
         if (hideNotification) {
-            LogUtil.d("调试模式：隐藏状态栏通知");
-            // 在调试模式下，不显示通知
-            // 但仍然需要启动前台服务以避免被系统杀死
-            startForeground(NOTIFICATION_ID, createEmptyNotification());
+            LogUtil.d("调试模式：完全隐藏状态栏通知栏目");
+            // 在调试模式下，使用完全隐藏的通知
+            startForeground(NOTIFICATION_ID, createHiddenNotification());
             return;
         }
         
@@ -141,32 +140,65 @@ public class RecordingService extends Service {
         }
     }
     
-    private Notification createEmptyNotification() {
-        // 创建一个完全空的、不可见的通知
+    private Notification createHiddenNotification() {
+        // 创建一个完全隐藏的通知，不显示在状态栏下拉框中
         Notification.Builder builder;
+        
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            builder = new Notification.Builder(this, "recording_channel");
+            // Android 8.0+：使用隐藏的通知渠道
+            createHiddenNotificationChannel();
+            builder = new Notification.Builder(this, "hidden_channel");
         } else {
             builder = new Notification.Builder(this);
         }
         
-        // 创建一个几乎不可见的通知
+        // 创建一个完全隐藏的通知
+        // 使用透明的小图标（1x1像素的透明图片）
+        // 但实际上，我们可以使用一个几乎不可见的配置
         builder.setContentTitle("")
                .setContentText("")
-               .setSmallIcon(android.R.drawable.ic_menu_gallery)  // 使用一个不显眼的图标
+               .setSmallIcon(android.R.drawable.ic_menu_gallery)  // 使用系统内置的不显眼图标
                .setOngoing(true)
                .setShowWhen(false)
                .setOnlyAlertOnce(true)
-               .setWhen(0);
+               .setWhen(0)
+               .setPriority(Notification.PRIORITY_MIN);  // 最低优先级
         
-        // 设置最低优先级
+        // 对于Android 8.0+，设置通知渠道为最低重要性
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             builder.setPriority(NotificationManager.IMPORTANCE_MIN);
-        } else {
-            builder.setPriority(Notification.PRIORITY_MIN);
         }
         
         return builder.build();
+    }
+    
+    private void createHiddenNotificationChannel() {
+        // 创建完全隐藏的通知渠道（Android 8.0+）
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            try {
+                // 使用最低的重要性级别，几乎不显示
+                NotificationChannel channel = new NotificationChannel(
+                    "hidden_channel",
+                    "Hidden Service",  // 用户看不到的渠道名称
+                    NotificationManager.IMPORTANCE_NONE  // 完全不显示
+                );
+                channel.setDescription("Hidden service channel");
+                channel.setShowBadge(false);
+                channel.setLockscreenVisibility(Notification.VISIBILITY_SECRET);
+                channel.enableLights(false);
+                channel.enableVibration(false);
+                channel.setSound(null, null);
+                channel.setImportance(NotificationManager.IMPORTANCE_NONE);  // 完全不显示
+                
+                NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+                if (manager != null) {
+                    manager.createNotificationChannel(channel);
+                    LogUtil.d("✅ 隐藏通知渠道创建成功: hidden_channel (IMPORTANCE_NONE)");
+                }
+            } catch (Exception e) {
+                LogUtil.e("❌ 创建隐藏通知渠道失败", e);
+            }
+        }
     }
     
     private void createNotificationChannel() {

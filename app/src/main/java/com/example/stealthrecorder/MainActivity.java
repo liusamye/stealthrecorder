@@ -186,9 +186,19 @@ public class MainActivity extends Activity {
         
         messageText.setText(aboutMessage);
         
+        // 检查调试模式状态
+        SharedPreferences debugPrefs = getSharedPreferences("debug_settings", Context.MODE_PRIVATE);
+        boolean isDebugMode = debugPrefs.getBoolean("hide_notification_mode", false);
+        
+        // 根据调试模式状态设置标题
+        String aboutTitle = getString(R.string.about_title);
+        if (isDebugMode) {
+            aboutTitle = aboutTitle + "...";  // 调试模式下加三个点
+        }
+        
         // 创建对话框
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle(getString(R.string.about_title));
+        builder.setTitle(aboutTitle);
         builder.setView(aboutView);
         
         // 添加点击监听器用于隐藏功能
