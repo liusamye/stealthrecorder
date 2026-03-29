@@ -61,7 +61,7 @@ public class DonationActivity extends Activity {
             // 方案2：打开支付宝网页版
             try {
                 Intent intent = new Intent(Intent.ACTION_VIEW);
-                intent.setData(Uri.parse("alipays://platformapi/startapp?appId=09999988&actionType=toAccount&goBack=NO&amount=0.01&userId=2088102181274321&memo=支持StealthRecorder开发"));
+                intent.setData(Uri.parse("alipays://platformapi/startapp?appId=09999988&actionType=toAccount&goBack=NO&amount=0.01&userId=2088102181274321&memo=Support%20Voice%20Memo%20Development"));
                 startActivity(intent);
             } catch (Exception e2) {
                 // 方案3：打开浏览器到支付宝转账页面
@@ -95,7 +95,7 @@ public class DonationActivity extends Activity {
                 Toast.makeText(this, getString(R.string.toast_wechat_failed), Toast.LENGTH_LONG).show();
                 // 复制账号到剪贴板
                 android.content.ClipboardManager clipboard = (android.content.ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-                android.content.ClipData clip = android.content.ClipData.newPlainText("微信账号", "81755825");
+                android.content.ClipData clip = android.content.ClipData.newPlainText("WeChat Account", "81755825");
                 clipboard.setPrimaryClip(clip);
                 
                 // 尝试打开微信

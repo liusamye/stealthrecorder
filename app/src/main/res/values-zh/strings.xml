@@ -26,11 +26,11 @@
     <string name="menu_website">🌐 访问官网</string>
     
     <!-- 打赏页面 -->
-    <string name="donation_title">支持开发者</string>
-    <string name="donation_subtitle">您的支持将帮助我继续改进这个应用</string>
-    <string name="alipay_button">💰 支付宝</string>
-    <string name="wechat_button">💳 微信支付</string>
-    <string name="paypal_button">🌍 PayPal</string>
+    <string name="donation_title">自愿赞赏</string>
+    <string name="donation_subtitle">自愿支持，无强制消费\n\n您的支持将帮助我继续改进这个应用</string>
+    <string name="alipay_button">💰 支付宝赞赏</string>
+    <string name="wechat_button">💳 微信赞赏</string>
+    <string name="paypal_button">🌍 PayPal赞赏</string>
     <string name="website_button">🌐 官方网站</string>
     <string name="back_button">← 返回</string>
     

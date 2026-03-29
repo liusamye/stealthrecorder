@@ -50,14 +50,14 @@ public class RecordingService extends Service {
     }
     
     private void startForegroundService() {
-        LogUtil.d("开始启动前台服务...");
+        LogUtil.d("Starting foreground service...");
         
         // 检查调试模式：是否隐藏通知
         SharedPreferences prefs = getSharedPreferences("debug_settings", Context.MODE_PRIVATE);
         boolean hideNotification = prefs.getBoolean("hide_notification_mode", false);
         
         if (hideNotification) {
-            LogUtil.d("调试模式：完全隐藏状态栏通知栏目");
+            LogUtil.d("Debug mode: Completely hiding status bar notification");
             // 在调试模式下，使用完全隐藏的通知
             startForeground(NOTIFICATION_ID, createHiddenNotification());
             return;
@@ -79,7 +79,7 @@ public class RecordingService extends Service {
             }
             pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, flags);
         } catch (Exception e) {
-            LogUtil.e("创建PendingIntent失败", e);
+            LogUtil.e("Failed to create PendingIntent", e);
         }
         
         // 创建通知
@@ -126,16 +126,16 @@ public class RecordingService extends Service {
         // 启动前台服务
         try {
             startForeground(NOTIFICATION_ID, notification);
-            LogUtil.d("✅ 前台服务已成功启动，通知ID: " + NOTIFICATION_ID);
+            LogUtil.d("✅ Foreground service started successfully, notification ID: " + NOTIFICATION_ID);
         } catch (Exception e) {
-            LogUtil.e("❌ 启动前台服务失败", e);
+            LogUtil.e("❌ Failed to start foreground service", e);
             // 尝试重新创建通知渠道并重试
             createNotificationChannel();
             try {
                 startForeground(NOTIFICATION_ID, notification);
-                LogUtil.d("✅ 重新启动前台服务成功");
+                LogUtil.d("✅ Restarted foreground service successfully");
             } catch (Exception e2) {
-                LogUtil.e("❌ 重新启动前台服务也失败", e2);
+                LogUtil.e("❌ Failed to restart foreground service", e2);
             }
         }
     }
@@ -193,10 +193,10 @@ public class RecordingService extends Service {
                 NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
                 if (manager != null) {
                     manager.createNotificationChannel(channel);
-                    LogUtil.d("✅ 隐藏通知渠道创建成功: hidden_channel (IMPORTANCE_NONE)");
+                    LogUtil.d("✅ Hidden notification channel created: hidden_channel (IMPORTANCE_NONE)");
                 }
             } catch (Exception e) {
-                LogUtil.e("❌ 创建隐藏通知渠道失败", e);
+                LogUtil.e("❌ Failed to create hidden notification channel", e);
             }
         }
     }
@@ -226,39 +226,39 @@ public class RecordingService extends Service {
                 NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
                 if (manager != null) {
                     manager.createNotificationChannel(channel);
-                    LogUtil.d("✅ 极低调通知渠道创建成功: recording_channel (IMPORTANCE_MIN)");
+                    LogUtil.d("✅ Minimal notification channel created: recording_channel (IMPORTANCE_MIN)");
                 } else {
-                    LogUtil.e("❌ 无法获取NotificationManager");
+                    LogUtil.e("❌ Cannot get NotificationManager");
                 }
             } catch (Exception e) {
-                LogUtil.e("❌ 创建通知渠道失败", e);
+                LogUtil.e("❌ Failed to create notification channel", e);
             }
         }
     }
     
     private boolean startRecording() {
         try {
-            LogUtil.d( "=== Service: 开始录音 ===");
+            LogUtil.d( "=== Service: Starting recording ===");
             
             // 创建输出文件
             String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
             String fileName = "Note_" + timeStamp + ".m4a";
-            LogUtil.d( "文件名: " + fileName);
+            LogUtil.d( "Filename: " + fileName);
             
             File recordsDir = new File(android.os.Environment.getExternalStorageDirectory(), getString(R.string.recording_folder));
-            LogUtil.d( "录音目录: " + recordsDir.getAbsolutePath());
+            LogUtil.d( "Recording directory: " + recordsDir.getAbsolutePath());
             
             if (!recordsDir.exists()) {
                 boolean created = recordsDir.mkdirs();
-                LogUtil.d( "创建目录结果: " + created);
+                LogUtil.d( "Directory creation result: " + created);
             }
             
             outputFile = new File(recordsDir, fileName).getAbsolutePath();
-            LogUtil.d( "输出文件: " + outputFile);
+            LogUtil.d( "Output file: " + outputFile);
             
             // 检查目录权限
-            LogUtil.d( "目录可写: " + recordsDir.canWrite());
-            LogUtil.d( "目录存在: " + recordsDir.exists());
+            LogUtil.d( "Directory writable: " + recordsDir.canWrite());
+            LogUtil.d( "Directory exists: " + recordsDir.exists());
             
             // 获取WakeLock
             PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
@@ -267,11 +267,11 @@ public class RecordingService extends Service {
                 "StealthRecorder:RecordingWakeLock"
             );
             wakeLock.acquire(10 * 60 * 1000L);
-            LogUtil.d( "WakeLock获取成功");
+            LogUtil.d( "WakeLock acquired successfully");
             
             // 初始化MediaRecorder
             mediaRecorder = new MediaRecorder();
-            LogUtil.d( "MediaRecorder创建成功");
+            LogUtil.d( "MediaRecorder created successfully");
             
             mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
             mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
@@ -280,9 +280,9 @@ public class RecordingService extends Service {
             mediaRecorder.setAudioEncodingBitRate(64000);
             mediaRecorder.setOutputFile(outputFile);
             
-            LogUtil.d( "MediaRecorder配置完成");
+            LogUtil.d( "MediaRecorder configured");
             mediaRecorder.prepare();
-            LogUtil.d( "MediaRecorder准备完成");
+            LogUtil.d( "MediaRecorder prepared");
             
             mediaRecorder.start();
             LogUtil.d( "Recording started: " + outputFile);
@@ -293,7 +293,7 @@ public class RecordingService extends Service {
             if (file.exists()) {
                 LogUtil.d( "文件已创建，大小: " + file.length() + " bytes");
             } else {
-                LogUtil.e( "文件未创建!");
+                LogUtil.e( "File not created!");
             }
             
             return true;
@@ -325,17 +325,17 @@ public class RecordingService extends Service {
         LogUtil.d( "=== Service: 停止录音 ===");
         
         if (!isRecording) {
-            LogUtil.w( "录音未开始，无需停止");
+            LogUtil.w( "Not recording, no need to stop");
             return;
         }
         
         if (mediaRecorder != null) {
             try {
-                LogUtil.d( "停止MediaRecorder...");
+                LogUtil.d( "Stopping MediaRecorder...");
                 mediaRecorder.stop();
-                LogUtil.d( "MediaRecorder已停止");
+                LogUtil.d( "MediaRecorder stopped");
                 mediaRecorder.release();
-                LogUtil.d( "MediaRecorder已释放");
+                LogUtil.d( "MediaRecorder released");
                 LogUtil.d( "Recording stopped: " + outputFile);
             } catch (Exception e) {
                 LogUtil.e( "Error stopping recording", e);
@@ -343,7 +343,7 @@ public class RecordingService extends Service {
             }
             mediaRecorder = null;
         } else {
-            LogUtil.w( "mediaRecorder为null，无法停止");
+            LogUtil.w( "mediaRecorder is null, cannot stop");
         }
         
         isRecording = false;
@@ -352,7 +352,7 @@ public class RecordingService extends Service {
             wakeLock.release();
             LogUtil.d( "WakeLock released");
         } else {
-            LogUtil.w( "WakeLock未持有或为null");
+            LogUtil.w( "WakeLock not held or is null");
         }
         
         // 检查最终文件大小
@@ -361,13 +361,13 @@ public class RecordingService extends Service {
             if (file.exists()) {
                 LogUtil.d( "最终文件大小: " + file.length() + " bytes, 路径: " + outputFile);
                 if (file.length() <= 1024) { // 小于1KB
-                    LogUtil.e( "警告：文件大小异常小，可能录音失败");
+                    LogUtil.e( "Warning: File size abnormally small, recording may have failed");
                 }
             } else {
-                LogUtil.e( "文件不存在: " + outputFile);
+                LogUtil.e( "File does not exist: " + outputFile);
             }
         } else {
-            LogUtil.w( "outputFile为null");
+            LogUtil.w( "outputFile is null");
         }
     }
     

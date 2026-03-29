@@ -26,11 +26,11 @@
     <string name="menu_website">🌐 Visit Website</string>
     
     <!-- 打赏页面 -->
-    <string name="donation_title">Support Developer</string>
-    <string name="donation_subtitle">Your support helps improve this app</string>
-    <string name="alipay_button">💰 Alipay</string>
-    <string name="wechat_button">💳 WeChat Pay</string>
-    <string name="paypal_button">🌍 PayPal</string>
+    <string name="donation_title">Voluntary Appreciation</string>
+    <string name="donation_subtitle">Voluntary support, no mandatory purchase\n\nYour support helps improve this app</string>
+    <string name="alipay_button">💰 Alipay Appreciation</string>
+    <string name="wechat_button">💳 WeChat Appreciation</string>
+    <string name="paypal_button">🌍 PayPal Appreciation</string>
     <string name="website_button">🌐 Official Website</string>
     <string name="back_button">← Back</string>
     

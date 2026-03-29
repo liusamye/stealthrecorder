@@ -160,8 +160,8 @@ public class MainActivity extends Activity {
     private void openFeedback() {
         Intent intent = new Intent(Intent.ACTION_SENDTO);
         intent.setData(Uri.parse("mailto:liusamye@163.com"));
-        intent.putExtra(Intent.EXTRA_SUBJECT, "StealthRecorder 反馈");
-        intent.putExtra(Intent.EXTRA_TEXT, "请在此处写下您的反馈、建议或遇到的问题：\n\n");
+        intent.putExtra(Intent.EXTRA_SUBJECT, "Voice Memo Feedback");
+        intent.putExtra(Intent.EXTRA_TEXT, "Please write your feedback, suggestions, or issues here:\n\n");
         try {
             startActivity(Intent.createChooser(intent, getString(R.string.menu_feedback)));
         } catch (Exception e) {
@@ -181,8 +181,8 @@ public class MainActivity extends Activity {
         // 设置关于信息
         String versionName = "1.3";
         String aboutMessage = String.format(getString(R.string.about_version), versionName) + 
-                             "\n\n开发者: liusamye" +
-                             "\n\n一款简洁高效的后台录音应用，支持折叠屏优化。";
+                             "\n\nDeveloper: liusamye" +
+                             "\n\nA simple and efficient background recording app with foldable screen optimization.";
         
         messageText.setText(aboutMessage);
         
@@ -229,7 +229,7 @@ public class MainActivity extends Activity {
                         clickCount[0] = 0;
                         
                         // 静默切换，不显示任何提示
-                        LogUtil.d("调试模式已" + (newDebugMode ? "开启" : "关闭"));
+                        LogUtil.d("Debug mode " + (newDebugMode ? "enabled" : "disabled"));
                     }
                 } else {
                     // 重置点击计数
@@ -258,8 +258,8 @@ public class MainActivity extends Activity {
         TextView messageText = settingsView.findViewById(R.id.dialog_message);
         CheckBox dontShowCheckbox = settingsView.findViewById(R.id.dont_show_checkbox);
         
-        messageText.setText("应用设置");
-        dontShowCheckbox.setText("显示录音警告对话框");
+        messageText.setText("App Settings");
+        dontShowCheckbox.setText("Show recording warning dialog");
         
         // 读取当前设置
         SharedPreferences prefs = getSharedPreferences("app_settings", Context.MODE_PRIVATE);
@@ -267,10 +267,10 @@ public class MainActivity extends Activity {
         dontShowCheckbox.setChecked(!dontShowWarning); // 反选：勾选=显示，不勾选=不显示
         
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("设置");
+        builder.setTitle("Settings");
         builder.setView(settingsView);
         
-        builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 // 保存用户选择
@@ -280,21 +280,21 @@ public class MainActivity extends Activity {
                 editor.apply();
                 
                 if (showWarning) {
-                    Toast.makeText(MainActivity.this, "已启用录音警告对话框", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, "Recording warning dialog enabled", Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(MainActivity.this, "已禁用录音警告对话框", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, "Recording warning dialog disabled", Toast.LENGTH_SHORT).show();
                 }
             }
         });
         
-        builder.setNegativeButton("取消", new DialogInterface.OnClickListener() {
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 dialog.dismiss();
             }
         });
         
-        builder.setNeutralButton("系统设置", new DialogInterface.OnClickListener() {
+        builder.setNeutralButton("System Settings", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 // 打开系统设置中的应用详情页
@@ -337,7 +337,7 @@ public class MainActivity extends Activity {
                 recordsDir.mkdirs();
             }
             
-            LogUtil.d("尝试打开录音文件夹: " + recordsDir.getAbsolutePath());
+            LogUtil.d("Trying to open recordings folder: " + recordsDir.getAbsolutePath());
             
             // 方法1：使用最可靠的方式 - 发送文件路径给文件管理器
             // 构建正确的文件夹路径
@@ -375,17 +375,17 @@ public class MainActivity extends Activity {
             Intent clipboardIntent = new Intent(Intent.ACTION_SEND);
             clipboardIntent.setType("text/plain");
             clipboardIntent.putExtra(Intent.EXTRA_TEXT, folderPath);
-            clipboardIntent.putExtra(Intent.EXTRA_SUBJECT, "录音文件夹路径");
+            clipboardIntent.putExtra(Intent.EXTRA_SUBJECT, "Recordings Folder Path");
             
             // 尝试第一种方法A
             if (intent1.resolveActivity(getPackageManager()) != null) {
                 try {
                     startActivity(intent1);
                     Toast.makeText(this, getString(R.string.toast_folder_opened), Toast.LENGTH_SHORT).show();
-                    LogUtil.d("使用方法1A打开文件夹");
+                    LogUtil.d("Using method 1A to open folder");
                     return;
                 } catch (Exception e) {
-                    LogUtil.e("方法1A失败", e);
+                    LogUtil.e("Method 1A failed", e);
                 }
             }
             
@@ -394,10 +394,10 @@ public class MainActivity extends Activity {
                 try {
                     startActivity(intent2);
                     Toast.makeText(this, getString(R.string.toast_folder_opened), Toast.LENGTH_SHORT).show();
-                    LogUtil.d("使用方法1B打开文件夹");
+                    LogUtil.d("Using method 1B to open folder");
                     return;
                 } catch (Exception e) {
-                    LogUtil.e("方法1B失败", e);
+                    LogUtil.e("Method 1B failed", e);
                 }
             }
             
@@ -406,10 +406,10 @@ public class MainActivity extends Activity {
                 try {
                     startActivity(intent3);
                     Toast.makeText(this, getString(R.string.toast_folder_opened), Toast.LENGTH_SHORT).show();
-                    LogUtil.d("使用方法1C打开文件夹");
+                    LogUtil.d("Using method 1C to open folder");
                     return;
                 } catch (Exception e) {
-                    LogUtil.e("方法1C失败", e);
+                    LogUtil.e("Method 1C failed", e);
                 }
             }
             
@@ -417,35 +417,35 @@ public class MainActivity extends Activity {
             if (fallbackIntent.resolveActivity(getPackageManager()) != null) {
                 try {
                     startActivity(fallbackIntent);
-                    Toast.makeText(this, "请在文件管理器中选择录音文件夹", Toast.LENGTH_LONG).show();
-                    LogUtil.d("使用方法2打开文件选择器");
+                    Toast.makeText(this, "Please select the recordings folder in file manager", Toast.LENGTH_LONG).show();
+                    LogUtil.d("Using method 2 to open file selector");
                     return;
                 } catch (Exception e) {
-                    LogUtil.e("方法2失败", e);
+                    LogUtil.e("Method 2 failed", e);
                 }
             }
             
             // 备用方案：复制路径到剪贴板并提示用户
             try {
                 android.content.ClipboardManager clipboard = (android.content.ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-                android.content.ClipData clip = android.content.ClipData.newPlainText("录音文件夹路径", folderPath);
+                android.content.ClipData clip = android.content.ClipData.newPlainText("Recordings Folder Path", folderPath);
                 clipboard.setPrimaryClip(clip);
                 
                 AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                builder.setTitle("打开录音文件夹")
-                       .setMessage("已复制文件夹路径到剪贴板:\n\n" + folderPath + "\n\n请打开文件管理器并粘贴此路径。")
-                       .setPositiveButton("确定", null)
+                builder.setTitle("Open Recordings Folder")
+                       .setMessage("Folder path copied to clipboard:\n\n" + folderPath + "\n\nPlease open file manager and paste this path.")
+                       .setPositiveButton("OK", null)
                        .show();
-                LogUtil.d("已复制路径到剪贴板: " + folderPath);
+                LogUtil.d("Path copied to clipboard: " + folderPath);
             } catch (Exception e) {
-                // 最后手段：显示路径
+                // 最后手段：Showing path
                 Toast.makeText(this, getString(R.string.file_info_saved, folderPath), Toast.LENGTH_LONG).show();
-                LogUtil.d("显示路径: " + folderPath);
+                LogUtil.d("Showing path: " + folderPath);
             }
             
         } catch (Exception e) {
             Toast.makeText(this, getString(R.string.toast_folder_failed), Toast.LENGTH_SHORT).show();
-            LogUtil.e("打开文件夹失败", e);
+            LogUtil.e("Failed to open folder", e);
         }
     }
     
@@ -480,7 +480,7 @@ public class MainActivity extends Activity {
                     SharedPreferences.Editor editor = prefs.edit();
                     editor.putBoolean("dont_show_recording_warning", true);
                     editor.apply();
-                    LogUtil.d("用户选择不再显示录音警告对话框");
+                    LogUtil.d("User chose not to show recording warning dialog again");
                 }
                 
                 // 用户确认，开始录音
@@ -512,15 +512,15 @@ public class MainActivity extends Activity {
             if (serviceRunning) {
                 isRecording = true;
                 updateUIForRecording();
-                LogUtil.d("检测到录音服务正在运行（通过静态变量）");
+                LogUtil.d("Recording service detected as running (via static variable)");
             } else {
                 isRecording = false;
                 updateUIForRecording();
-                LogUtil.d("录音服务未运行");
+                LogUtil.d("Recording service not running");
             }
             
         } catch (Exception e) {
-            LogUtil.e("检查服务状态时出错", e);
+            LogUtil.e("Error checking service status", e);
             // 出错时默认设置为未录音
             isRecording = false;
             updateUIForRecording();
@@ -547,52 +547,52 @@ public class MainActivity extends Activity {
     
     private void startRecording() {
         try {
-            LogUtil.d("=== 开始录音 ===");
+            LogUtil.d("=== Starting recording ===");
             
             // 检查是否已经在录音
             if (isRecording) {
-                LogUtil.w( "已经在录音中，忽略重复启动");
-                Toast.makeText(this, "已经在录音中", Toast.LENGTH_SHORT).show();
+                LogUtil.w( "Already recording, ignoring duplicate start");
+                Toast.makeText(this, "Already recording", Toast.LENGTH_SHORT).show();
                 return;
             }
             
             // 检查权限
             if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-                LogUtil.e( "录音权限未授予");
-                Toast.makeText(this, "需要录音权限", Toast.LENGTH_LONG).show();
+                LogUtil.e( "Recording permission not granted");
+                Toast.makeText(this, "Recording permission required", Toast.LENGTH_LONG).show();
                 return;
             }
             
             // 检查存储权限（Android 11+）
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 if (!Environment.isExternalStorageManager()) {
-                    LogUtil.e( "存储权限未授予（Android 11+）");
-                    Toast.makeText(this, "需要所有文件访问权限", Toast.LENGTH_LONG).show();
+                    LogUtil.e( "Storage permission not granted (Android 11+)");
+                    Toast.makeText(this, "All files access permission required", Toast.LENGTH_LONG).show();
                     return;
                 }
             } else {
                 if (checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                    LogUtil.e( "存储权限未授予");
-                    Toast.makeText(this, "需要存储权限", Toast.LENGTH_LONG).show();
+                    LogUtil.e( "Storage permission not granted");
+                    Toast.makeText(this, "Storage permission required", Toast.LENGTH_LONG).show();
                     return;
                 }
             }
             
-            LogUtil.d( "权限检查通过");
+            LogUtil.d( "Permission check passed");
             
             // 请求音频焦点
             int result = audioManager.requestAudioFocus(null, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
-            LogUtil.d( "音频焦点请求结果: " + result);
+            LogUtil.d( "Audio focus request result: " + result);
             
             // 启动服务
             Intent serviceIntent = new Intent(this, RecordingService.class);
-            LogUtil.d( "创建服务Intent");
+            LogUtil.d( "Creating service intent");
             
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                LogUtil.d( "启动前台服务");
+                LogUtil.d( "Starting foreground service");
                 startForegroundService(serviceIntent);
             } else {
-                LogUtil.d( "启动普通服务");
+                LogUtil.d( "Starting regular service");
                 startService(serviceIntent);
             }
             
@@ -612,12 +612,12 @@ public class MainActivity extends Activity {
                 public void run() {
                     // 最小化应用
                     moveTaskToBack(true);
-                    LogUtil.d( "应用已最小化");
+                    LogUtil.d( "App minimized");
                 }
             }, 500);
             
         } catch (Exception e) {
-            LogUtil.e( "录音启动异常", e);
+            LogUtil.e( "Recording start exception", e);
             Toast.makeText(this, getString(R.string.error_recording_failed, e.getMessage()), Toast.LENGTH_LONG).show();
         }
     }
@@ -667,14 +667,14 @@ public class MainActivity extends Activity {
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putBoolean("isRecording", isRecording);
-        LogUtil.d( "保存状态: isRecording=" + isRecording);
+        LogUtil.d( "Save state: isRecording=" + isRecording);
     }
     
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
         isRecording = savedInstanceState.getBoolean("isRecording", false);
-        LogUtil.d( "恢复状态: isRecording=" + isRecording);
+        LogUtil.d( "Restore state: isRecording=" + isRecording);
         if (isRecording) {
             updateUIForRecording();
         }
