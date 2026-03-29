@@ -1,3 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">语音备忘录</string>
+    <!-- 应用名称 -->
+    <string name="app_name">StealthRecorder</string>
+    <string name="app_subtitle">Voice Memo Assistant</string>
+    
+    <!-- 主界面 -->
+    <string name="title_text">📝 Note Assistant</string>
+    <string name="status_ready">🟢 Ready</string>
+    <string name="status_recording">🔴 Recording...</string>
+    <string name="status_saved">🟢 Note Saved</string>
+    <string name="record_button_start">● Start Recording</string>
+    <string name="record_button_stop">■ Stop Recording</string>
+    <string name="timer_default">00:00</string>
+    <string name="file_info_default">Files will be saved to secure location</string>
+    <string name="file_info_recording">⏺️ Recording in progress...</string>
+    <string name="file_info_saved">📁 Saved to: %s</string>
+    <string name="open_folder_button">📁 Open Recordings Folder</string>
+    <string name="hint_text">💡 Long press record button for detailed instructions</string>
+    
+    <!-- 菜单项 -->
+    <string name="menu_donate">💝 Donate</string>
+    <string name="menu_feedback">📧 Feedback</string>
+    <string name="menu_settings">⚙️ Settings</string>
+    <string name="menu_about">ℹ️ About</string>
+    <string name="menu_website">🌐 Visit Website</string>
+    
+    <!-- 打赏页面 -->
+    <string name="donation_title">Support Developer</string>
+    <string name="donation_subtitle">Your support helps improve this app</string>
+    <string name="alipay_button">💰 Alipay</string>
+    <string name="wechat_button">💳 WeChat Pay</string>
+    <string name="paypal_button">🌍 PayPal</string>
+    <string name="website_button">🌐 Official Website</string>
+    <string name="back_button">← Back</string>
+    
+    <!-- 通知 -->
+    <string name="notification_channel_name">Recording Service</string>
+    <string name="notification_channel_description">Voice memo recording service</string>
+    <string name="notification_title">Voice Memo - Recording</string>
+    <string name="notification_text">Tap to return to app</string>
+    
+    <!-- 权限请求 -->
+    <string name="permission_record_audio">Recording permission is required to use this app</string>
+    <string name="permission_storage">Storage permission is required to save recordings</string>
+    <string name="permission_granted">Permission granted</string>
+    <string name="permission_denied">Permission denied</string>
+    
+    <!-- 提示信息 -->
+    <string name="toast_recording_started">Recording started, app minimized</string>
+    <string name="toast_recording_stopped">Recording saved to: %s</string>
+    <string name="toast_folder_opened">Folder opened</string>
+    <string name="toast_folder_failed">Failed to open folder</string>
+    <string name="toast_website_failed">Unable to open website</string>
+    <string name="toast_email_failed">No email app found</string>
+    <string name="toast_alipay_failed">Please install Alipay</string>
+    <string name="toast_wechat_failed">Please open WeChat and transfer to account 81755825</string>
+    
+    <!-- 错误信息 -->
+    <string name="error_recording_failed">Recording failed: %s</string>
+    <string name="error_service_failed">Service failed to start</string>
+    <string name="error_permission_required">Required permission not granted</string>
+    
+    <!-- 文件信息 -->
+    <string name="file_saved_successfully">File saved successfully</string>
+    <string name="recording_folder">Recordings</string>
+    <string name="file_name_format">Note_%s.m4a</string>
+    
+    <!-- 设置页面 -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_audio_quality">Audio Quality</string>
+    <string name="settings_storage_location">Storage Location</string>
+    <string name="settings_auto_start">Auto-start recording</string>
+    <string name="settings_notifications">Notifications</string>
+    
+    <!-- 关于页面 -->
+    <string name="about_title">About StealthRecorder</string>
+    <string name="about_version">Version: %s</string>
+    <string name="about_description">A privacy-focused voice recording app with background recording support.</string>
+    <string name="about_developer">Developer: liusamye</string>
+    <string name="about_email">Email: liusamye@163.com</string>
+    <string name="about_website">Website: http://124.70.136.239</string>
+    
+    <!-- 长按提示 -->
+    <string name="long_press_title">How to Use</string>
+    <string name="long_press_content">1. Tap to start/stop recording\n2. App minimizes during recording\n3. Files saved to Recordings folder\n4. Access menu for more options</string>
 </resources>

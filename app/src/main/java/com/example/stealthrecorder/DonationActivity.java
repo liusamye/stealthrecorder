@@ -65,7 +65,7 @@ public class DonationActivity extends Activity {
                 startActivity(intent);
             } catch (Exception e2) {
                 // 方案3：打开浏览器到支付宝转账页面
-                Toast.makeText(this, "正在打开支付宝...", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, getString(R.string.toast_alipay_failed), Toast.LENGTH_SHORT).show();
                 Intent intent = new Intent(Intent.ACTION_VIEW);
                 intent.setData(Uri.parse("https://qr.alipay.com/fkx16888gq8qk9kfvfptxad"));
                 startActivity(intent);
@@ -92,7 +92,7 @@ public class DonationActivity extends Activity {
                 startActivity(intent);
             } catch (Exception e2) {
                 // 方案3：显示提示信息
-                Toast.makeText(this, "请在微信中向账号 81755825 转账", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, getString(R.string.toast_wechat_failed), Toast.LENGTH_LONG).show();
                 // 复制账号到剪贴板
                 android.content.ClipboardManager clipboard = (android.content.ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
                 android.content.ClipData clip = android.content.ClipData.newPlainText("微信账号", "81755825");
@@ -105,7 +105,7 @@ public class DonationActivity extends Activity {
                         startActivity(intent);
                     }
                 } catch (Exception e3) {
-                    Toast.makeText(this, "无法打开微信，请手动打开", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, getString(R.string.toast_wechat_failed), Toast.LENGTH_SHORT).show();
                 }
             }
         }

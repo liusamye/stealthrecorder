@@ -158,9 +158,9 @@ public class MainActivity extends Activity {
         intent.putExtra(Intent.EXTRA_SUBJECT, "StealthRecorder 反馈");
         intent.putExtra(Intent.EXTRA_TEXT, "请在此处写下您的反馈、建议或遇到的问题：\n\n");
         try {
-            startActivity(Intent.createChooser(intent, "选择邮件应用"));
+            startActivity(Intent.createChooser(intent, getString(R.string.menu_feedback)));
         } catch (Exception e) {
-            Toast.makeText(this, "未找到邮件应用", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.toast_email_failed), Toast.LENGTH_SHORT).show();
         }
     }
     
@@ -197,12 +197,12 @@ public class MainActivity extends Activity {
                 // 继续尝试下一个
             }
         }
-        Toast.makeText(this, "无法打开官网", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, getString(R.string.toast_website_failed), Toast.LENGTH_SHORT).show();
     }
     
     private void openRecordingsFolder() {
         try {
-            File recordsDir = new File(Environment.getExternalStorageDirectory(), "Recordings");
+            File recordsDir = new File(Environment.getExternalStorageDirectory(), getString(R.string.recording_folder));
             if (!recordsDir.exists()) {
                 recordsDir.mkdirs();
             }
@@ -213,12 +213,13 @@ public class MainActivity extends Activity {
             // 尝试使用文件管理器打开
             if (intent.resolveActivity(getPackageManager()) != null) {
                 startActivity(intent);
+                Toast.makeText(this, getString(R.string.toast_folder_opened), Toast.LENGTH_SHORT).show();
             } else {
                 // 备用方案：显示路径
-                Toast.makeText(this, "录音文件夹: " + recordsDir.getAbsolutePath(), Toast.LENGTH_LONG).show();
+                Toast.makeText(this, getString(R.string.file_info_saved, recordsDir.getAbsolutePath()), Toast.LENGTH_LONG).show();
             }
         } catch (Exception e) {
-            Toast.makeText(this, "无法打开文件夹", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.toast_folder_failed), Toast.LENGTH_SHORT).show();
             LogUtil.e("打开文件夹失败", e);
         }
     }
@@ -248,16 +249,16 @@ public class MainActivity extends Activity {
     
     private void updateUIForRecording() {
         if (isRecording) {
-            recordButton.setText("■ 停止记录");
-            statusText.setText("🔴 记录中...");
-            fileInfoText.setText("⏺️ 正在录音...");
+            recordButton.setText(getString(R.string.record_button_stop));
+            statusText.setText(getString(R.string.status_recording));
+            fileInfoText.setText(getString(R.string.file_info_recording));
             timerText.setVisibility(View.VISIBLE);
             recordButton.setBackgroundResource(R.drawable.record_button_recording);
             openFolderButton.setVisibility(View.GONE);
         } else {
-            recordButton.setText("● 开始记录");
-            statusText.setText("🟢 准备就绪");
-            fileInfoText.setText("文件将保存到安全位置");
+            recordButton.setText(getString(R.string.record_button_start));
+            statusText.setText(getString(R.string.status_ready));
+            fileInfoText.setText(getString(R.string.file_info_default));
             timerText.setVisibility(View.GONE);
             recordButton.setBackgroundResource(R.drawable.record_button_bg);
             openFolderButton.setVisibility(View.GONE);
@@ -325,11 +326,11 @@ public class MainActivity extends Activity {
             // 最小化应用
             moveTaskToBack(true);
             LogUtil.d( "应用已最小化");
-            Toast.makeText(this, "录音已开始，应用已最小化", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.toast_recording_started), Toast.LENGTH_SHORT).show();
             
         } catch (Exception e) {
             LogUtil.e( "录音启动异常", e);
-            Toast.makeText(this, "录音启动失败: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            Toast.makeText(this, getString(R.string.error_recording_failed, e.getMessage()), Toast.LENGTH_LONG).show();
         }
     }
     
@@ -342,17 +343,17 @@ public class MainActivity extends Activity {
         timerHandler.removeCallbacks(timerRunnable);
         
         updateUIForRecording();
-        statusText.setText("🟢 记录已保存");
+        statusText.setText(getString(R.string.status_saved));
         
         // 显示保存路径
-        File recordsDir = new File(Environment.getExternalStorageDirectory(), "Recordings");
+        File recordsDir = new File(Environment.getExternalStorageDirectory(), getString(R.string.recording_folder));
         String savePath = recordsDir.getAbsolutePath();
-        fileInfoText.setText("📁 保存到: " + savePath);
+        fileInfoText.setText(getString(R.string.file_info_saved, savePath));
         
         // 显示打开文件夹按钮
         openFolderButton.setVisibility(View.VISIBLE);
         
-        Toast.makeText(this, "录音已保存到: " + savePath, Toast.LENGTH_LONG).show();
+        Toast.makeText(this, getString(R.string.toast_recording_stopped, savePath), Toast.LENGTH_LONG).show();
     }
     
     @Override
@@ -361,15 +362,15 @@ public class MainActivity extends Activity {
         
         if (requestCode == REQUEST_RECORD_AUDIO_PERMISSION) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(this, "录音权限已授予", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, getString(R.string.permission_granted), Toast.LENGTH_SHORT).show();
             } else {
-                Toast.makeText(this, "需要录音权限才能使用应用", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, getString(R.string.permission_record_audio), Toast.LENGTH_LONG).show();
             }
         } else if (requestCode == REQUEST_STORAGE_PERMISSION) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(this, "存储权限已授予", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, getString(R.string.permission_granted), Toast.LENGTH_SHORT).show();
             } else {
-                Toast.makeText(this, "需要存储权限才能保存录音", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, getString(R.string.permission_storage), Toast.LENGTH_LONG).show();
             }
         }
     }

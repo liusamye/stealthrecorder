@@ -47,10 +47,10 @@ public class RecordingService extends Service {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
                 "recording_channel",
-                "录音服务",
+                getString(R.string.notification_channel_name),
                 NotificationManager.IMPORTANCE_LOW
             );
-            channel.setDescription("语音备忘录录音服务");
+            channel.setDescription(getString(R.string.notification_channel_description));
             channel.setShowBadge(false);
             
             NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
@@ -66,8 +66,8 @@ public class RecordingService extends Service {
         }
         
         Notification notification = builder
-            .setContentTitle("语音备忘录 - 录音中")
-            .setContentText("点击返回应用")
+            .setContentTitle(getString(R.string.notification_title))
+            .setContentText(getString(R.string.notification_text))
             .setSmallIcon(android.R.drawable.ic_btn_speak_now)
             .setOngoing(true)
             .setPriority(Notification.PRIORITY_LOW)
@@ -87,7 +87,7 @@ public class RecordingService extends Service {
             String fileName = "Note_" + timeStamp + ".m4a";
             LogUtil.d( "文件名: " + fileName);
             
-            File recordsDir = new File(android.os.Environment.getExternalStorageDirectory(), "Recordings");
+            File recordsDir = new File(android.os.Environment.getExternalStorageDirectory(), getString(R.string.recording_folder));
             LogUtil.d( "录音目录: " + recordsDir.getAbsolutePath());
             
             if (!recordsDir.exists()) {

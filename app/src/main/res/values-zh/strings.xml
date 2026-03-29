@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 应用名称 -->
+    <string name="app_name">隐秘录音器</string>
+    <string name="app_subtitle">语音备忘录助手</string>
+    
+    <!-- 主界面 -->
+    <string name="title_text">📝 笔记助手</string>
+    <string name="status_ready">🟢 准备就绪</string>
+    <string name="status_recording">🔴 录音中...</string>
+    <string name="status_saved">🟢 记录已保存</string>
+    <string name="record_button_start">● 开始记录</string>
+    <string name="record_button_stop">■ 停止记录</string>
+    <string name="timer_default">00:00</string>
+    <string name="file_info_default">文件将保存到安全位置</string>
+    <string name="file_info_recording">⏺️ 正在录音...</string>
+    <string name="file_info_saved">📁 保存到: %s</string>
+    <string name="open_folder_button">📁 打开录音文件夹</string>
+    <string name="hint_text">💡 长按录音按钮查看详细说明</string>
+    
+    <!-- 菜单项 -->
+    <string name="menu_donate">💝 打赏</string>
+    <string name="menu_feedback">📧 反馈</string>
+    <string name="menu_settings">⚙️ 设置</string>
+    <string name="menu_about">ℹ️ 关于</string>
+    <string name="menu_website">🌐 访问官网</string>
+    
+    <!-- 打赏页面 -->
+    <string name="donation_title">支持开发者</string>
+    <string name="donation_subtitle">您的支持将帮助我继续改进这个应用</string>
+    <string name="alipay_button">💰 支付宝</string>
+    <string name="wechat_button">💳 微信支付</string>
+    <string name="paypal_button">🌍 PayPal</string>
+    <string name="website_button">🌐 官方网站</string>
+    <string name="back_button">← 返回</string>
+    
+    <!-- 通知 -->
+    <string name="notification_channel_name">录音服务</string>
+    <string name="notification_channel_description">语音备忘录录音服务</string>
+    <string name="notification_title">语音备忘录 - 录音中</string>
+    <string name="notification_text">点击返回应用</string>
+    
+    <!-- 权限请求 -->
+    <string name="permission_record_audio">需要录音权限才能使用此应用</string>
+    <string name="permission_storage">需要存储权限才能保存录音</string>
+    <string name="permission_granted">权限已授予</string>
+    <string name="permission_denied">权限被拒绝</string>
+    
+    <!-- 提示信息 -->
+    <string name="toast_recording_started">录音已开始，应用已最小化</string>
+    <string name="toast_recording_stopped">录音已保存到: %s</string>
+    <string name="toast_folder_opened">文件夹已打开</string>
+    <string name="toast_folder_failed">无法打开文件夹</string>
+    <string name="toast_website_failed">无法打开网站</string>
+    <string name="toast_email_failed">未找到邮件应用</string>
+    <string name="toast_alipay_failed">请安装支付宝</string>
+    <string name="toast_wechat_failed">请在微信中向账号 81755825 转账</string>
+    
+    <!-- 错误信息 -->
+    <string name="error_recording_failed">录音失败: %s</string>
+    <string name="error_service_failed">服务启动失败</string>
+    <string name="error_permission_required">所需权限未授予</string>
+    
+    <!-- 文件信息 -->
+    <string name="file_saved_successfully">文件保存成功</string>
+    <string name="recording_folder">Recordings</string>
+    <string name="file_name_format">Note_%s.m4a</string>
+    
+    <!-- 设置页面 -->
+    <string name="settings_title">设置</string>
+    <string name="settings_audio_quality">音频质量</string>
+    <string name="settings_storage_location">存储位置</string>
+    <string name="settings_auto_start">自动开始录音</string>
+    <string name="settings_notifications">通知</string>
+    
+    <!-- 关于页面 -->
+    <string name="about_title">关于隐秘录音器</string>
+    <string name="about_version">版本: %s</string>
+    <string name="about_description">一款注重隐私的语音录音应用，支持后台录音。</string>
+    <string name="about_developer">开发者: liusamye</string>
+    <string name="about_email">邮箱: liusamye@163.com</string>
+    <string name="about_website">网站: http://124.70.136.239</string>
+    
+    <!-- 长按提示 -->
+    <string name="long_press_title">使用说明</string>
+    <string name="long_press_content">1. 点击开始/停止录音\n2. 录音时应用最小化\n3. 文件保存到Recordings文件夹\n4. 访问菜单获取更多选项</string>
+</resources>

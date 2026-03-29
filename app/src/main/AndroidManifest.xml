@@ -23,7 +23,7 @@
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
-        android:label="语音备忘录"
+        android:label="@string/app_name"
         android:theme="@android:style/Theme.Light"
         android:requestLegacyExternalStorage="true">
         
@@ -38,7 +38,7 @@
         
         <activity
             android:name=".DonationActivity"
-            android:label="支持开发者"
+            android:label="@string/donation_title"
             android:exported="false"
             android:theme="@android:style/Theme.Light" />
         

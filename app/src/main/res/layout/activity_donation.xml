@@ -9,12 +9,21 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="支持开发者"
+        android:text="@string/donation_title"
         android:textSize="24sp"
         android:textStyle="bold"
         android:gravity="center"
-        android:layout_marginBottom="32dp"
+        android:layout_marginBottom="16dp"
         android:textColor="#333333" />
+    
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/donation_subtitle"
+        android:textSize="14sp"
+        android:gravity="center"
+        android:layout_marginBottom="32dp"
+        android:textColor="#666666" />
 
     <TextView
         android:layout_width="match_parent"
@@ -36,7 +45,7 @@
             android:id="@+id/alipay_btn"
             android:layout_width="match_parent"
             android:layout_height="56dp"
-            android:text="支付宝打赏"
+            android:text="@string/alipay_button"
             android:textSize="18sp"
             android:background="@drawable/button_primary"
             android:layout_marginBottom="16dp"
@@ -47,7 +56,7 @@
             android:id="@+id/wechat_btn"
             android:layout_width="match_parent"
             android:layout_height="56dp"
-            android:text="微信打赏"
+            android:text="@string/wechat_button"
             android:textSize="18sp"
             android:background="@drawable/button_primary"
             android:layout_marginBottom="16dp"
@@ -58,7 +67,7 @@
             android:id="@+id/paypal_btn"
             android:layout_width="match_parent"
             android:layout_height="56dp"
-            android:text="PayPal 支持"
+            android:text="@string/paypal_button"
             android:textSize="18sp"
             android:background="@drawable/button_secondary"
             android:layout_marginBottom="16dp"
@@ -69,7 +78,7 @@
             android:id="@+id/website_btn"
             android:layout_width="match_parent"
             android:layout_height="56dp"
-            android:text="访问官网"
+            android:text="@string/website_button"
             android:textSize="18sp"
             android:background="@drawable/button_secondary"
             android:drawableLeft="@android:drawable/ic_menu_info_details"

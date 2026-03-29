@@ -2,26 +2,26 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/menu_donate"
-        android:title="支持开发者"
+        android:title="@string/menu_donate"
         android:icon="@android:drawable/ic_menu_send" />
     
     <item
         android:id="@+id/menu_feedback"
-        android:title="反馈建议"
+        android:title="@string/menu_feedback"
         android:icon="@android:drawable/ic_menu_edit" />
     
     <item
         android:id="@+id/menu_settings"
-        android:title="应用设置"
+        android:title="@string/menu_settings"
         android:icon="@android:drawable/ic_menu_preferences" />
     
     <item
         android:id="@+id/menu_about"
-        android:title="关于"
+        android:title="@string/menu_about"
         android:icon="@android:drawable/ic_menu_info_details" />
     
     <item
         android:id="@+id/menu_website"
-        android:title="访问官网"
+        android:title="@string/menu_website"
         android:icon="@android:drawable/ic_menu_view" />
 </menu>
