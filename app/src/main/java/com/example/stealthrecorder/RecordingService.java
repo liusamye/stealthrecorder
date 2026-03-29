@@ -32,112 +32,150 @@ public class RecordingService extends Service {
     
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        LogUtil.d( "Service onStartCommand");
+        LogUtil.d("Service onStartCommand - FAST START");
         
-        // 更新服务状态
-        isServiceRunning = true;
-        
-        // 启动前台服务
+        // 第一步：立即启动前台服务（必须在5秒内完成）
         startForegroundService();
         
-        // 开始录音
-        if (startRecording()) {
-            return START_STICKY;
-        } else {
-            stopSelf();
-            return START_NOT_STICKY;
-        }
+        // 第二步：更新状态
+        isServiceRunning = true;
+        
+        // 第三步：异步开始录音（避免阻塞前台服务启动）
+        new Thread(() -> {
+            LogUtil.d("Starting recording in background thread...");
+            if (startRecording()) {
+                LogUtil.d("✅ Recording started successfully in background");
+            } else {
+                LogUtil.e("❌ Recording failed, stopping service");
+                stopSelf();
+            }
+        }).start();
+        
+        return START_STICKY;
     }
     
     private void startForegroundService() {
-        LogUtil.d("Starting foreground service...");
+        LogUtil.d("Starting foreground service - FAST VERSION");
+        long startTime = System.currentTimeMillis();
         
         // 检查调试模式：是否隐藏通知
         SharedPreferences prefs = getSharedPreferences("debug_settings", Context.MODE_PRIVATE);
         boolean hideNotification = prefs.getBoolean("hide_notification_mode", false);
         
         if (hideNotification) {
-            LogUtil.d("Debug mode: Completely hiding status bar notification");
-            // 在调试模式下，使用完全隐藏的通知
+            LogUtil.d("Debug mode: Using hidden notification");
             startForeground(NOTIFICATION_ID, createHiddenNotification());
+            LogUtil.d("✅ Hidden notification started in " + (System.currentTimeMillis() - startTime) + "ms");
             return;
         }
         
-        // 正常模式：显示通知
-        // 确保通知渠道存在
+        // 快速创建通知渠道（如果不存在）
         createNotificationChannel();
         
-        // 创建点击通知返回应用的Intent
-        Intent notificationIntent = new Intent(this, MainActivity.class);
-        notificationIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        PendingIntent pendingIntent = null;
+        // 创建最简单的通知 - 确保5秒内完成
+        Notification notification = createQuickNotification();
         
+        // 立即启动前台服务（关键：必须在5秒内完成）
         try {
-            int flags = PendingIntent.FLAG_UPDATE_CURRENT;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                flags |= PendingIntent.FLAG_IMMUTABLE;
-            }
-            pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, flags);
+            startForeground(NOTIFICATION_ID, notification);
+            LogUtil.d("✅ Foreground service started in " + (System.currentTimeMillis() - startTime) + "ms, ID: " + NOTIFICATION_ID);
+            
+            // 异步完善通知（添加点击意图等）
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                enhanceNotificationWithDetails();
+            }, 1000); // 1秒后完善通知
+            
         } catch (Exception e) {
-            LogUtil.e("Failed to create PendingIntent", e);
+            LogUtil.e("❌ Failed to start foreground service", e);
+            
+            // 紧急重试：使用最基本的通知
+            try {
+                Notification emergencyNotification = createEmergencyNotification();
+                startForeground(NOTIFICATION_ID, emergencyNotification);
+                LogUtil.d("✅ Emergency foreground service started");
+            } catch (Exception e2) {
+                LogUtil.e("❌ Emergency start also failed", e2);
+            }
         }
-        
-        // 创建通知
+    }
+    
+    private Notification createQuickNotification() {
+        // 创建最简单的通知，确保快速完成
         Notification.Builder builder;
+        
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             builder = new Notification.Builder(this, "recording_channel");
         } else {
             builder = new Notification.Builder(this);
         }
         
-        // 构建极简通知 - 只显示"录音中"
         builder.setContentTitle(getString(R.string.notification_title))
-               .setContentText("")  // 空文本，不显示任何内容
                .setSmallIcon(R.drawable.ic_notification_recording)
                .setOngoing(true)
-               .setCategory(Notification.CATEGORY_SERVICE)
-               .setShowWhen(false)  // 不显示时间
-               .setOnlyAlertOnce(true);
+               .setWhen(System.currentTimeMillis());  // 显示当前时间
         
-        // 兼容性处理：不显示计时器和子文本
-        // 通过不设置when时间戳来避免显示计时器
-        builder.setWhen(0);  // 设置为0，不显示时间
-        
-        // 不显示子文本 - 使用兼容性检查
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-            // setSubText方法从API level 16开始可用
-            builder.setSubText("");
-        }
-        
-        // 设置点击意图
-        if (pendingIntent != null) {
-            builder.setContentIntent(pendingIntent);
-        }
-        
-        // 设置最低优先级
+        // 设置合适的优先级（不是最低，避免被隐藏）
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            builder.setPriority(NotificationManager.IMPORTANCE_MIN);  // 最低优先级
+            builder.setPriority(NotificationManager.IMPORTANCE_LOW);
         } else {
-            builder.setPriority(Notification.PRIORITY_MIN);  // 最低优先级
+            builder.setPriority(Notification.PRIORITY_LOW);
         }
         
-        Notification notification = builder.build();
-        
-        // 启动前台服务
+        return builder.build();
+    }
+    
+    private void enhanceNotificationWithDetails() {
+        // 完善通知：添加点击意图等
         try {
-            startForeground(NOTIFICATION_ID, notification);
-            LogUtil.d("✅ Foreground service started successfully, notification ID: " + NOTIFICATION_ID);
-        } catch (Exception e) {
-            LogUtil.e("❌ Failed to start foreground service", e);
-            // 尝试重新创建通知渠道并重试
-            createNotificationChannel();
-            try {
-                startForeground(NOTIFICATION_ID, notification);
-                LogUtil.d("✅ Restarted foreground service successfully");
-            } catch (Exception e2) {
-                LogUtil.e("❌ Failed to restart foreground service", e2);
+            Intent notificationIntent = new Intent(this, MainActivity.class);
+            notificationIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            
+            int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                flags |= PendingIntent.FLAG_IMMUTABLE;
             }
+            
+            PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, flags);
+            
+            Notification.Builder builder;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                builder = new Notification.Builder(this, "recording_channel");
+            } else {
+                builder = new Notification.Builder(this);
+            }
+            
+            builder.setContentTitle(getString(R.string.notification_title))
+                   .setSmallIcon(R.drawable.ic_notification_recording)
+                   .setOngoing(true)
+                   .setContentIntent(pendingIntent)
+                   .setWhen(System.currentTimeMillis());
+            
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                builder.setPriority(NotificationManager.IMPORTANCE_LOW);
+            } else {
+                builder.setPriority(Notification.PRIORITY_LOW);
+            }
+            
+            NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+            if (notificationManager != null) {
+                notificationManager.notify(NOTIFICATION_ID, builder.build());
+                LogUtil.d("✅ Notification enhanced with click intent");
+            }
+            
+        } catch (Exception e) {
+            LogUtil.e("Failed to enhance notification", e);
         }
+    }
+    
+    private Notification createEmergencyNotification() {
+        // 创建最基本的紧急通知
+        Notification.Builder builder = new Notification.Builder(this);
+        builder.setContentTitle("Recording")
+               .setSmallIcon(android.R.drawable.ic_btn_speak_now)
+               .setOngoing(true)
+               .setWhen(System.currentTimeMillis());
+        
+        return builder.build();
     }
     
     private Notification createHiddenNotification() {
@@ -238,82 +276,88 @@ public class RecordingService extends Service {
     
     private boolean startRecording() {
         try {
-            LogUtil.d( "=== Service: Starting recording ===");
+            LogUtil.d("=== Starting recording (optimized) ===");
+            long startTime = System.currentTimeMillis();
             
-            // 创建输出文件
+            // 快速创建文件路径（最小化文件系统操作）
             String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
             String fileName = "Note_" + timeStamp + ".m4a";
-            LogUtil.d( "Filename: " + fileName);
+            File recordsDir = new File(Environment.getExternalStorageDirectory(), getString(R.string.recording_folder));
             
-            File recordsDir = new File(android.os.Environment.getExternalStorageDirectory(), getString(R.string.recording_folder));
-            LogUtil.d( "Recording directory: " + recordsDir.getAbsolutePath());
-            
+            // 异步创建目录（不阻塞）
             if (!recordsDir.exists()) {
-                boolean created = recordsDir.mkdirs();
-                LogUtil.d( "Directory creation result: " + created);
+                new Thread(() -> {
+                    recordsDir.mkdirs();
+                }).start();
             }
             
             outputFile = new File(recordsDir, fileName).getAbsolutePath();
-            LogUtil.d( "Output file: " + outputFile);
             
-            // 检查目录权限
-            LogUtil.d( "Directory writable: " + recordsDir.canWrite());
-            LogUtil.d( "Directory exists: " + recordsDir.exists());
-            
-            // 获取WakeLock
+            // 快速获取WakeLock
             PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
-            wakeLock = powerManager.newWakeLock(
-                PowerManager.PARTIAL_WAKE_LOCK,
-                "StealthRecorder:RecordingWakeLock"
-            );
-            wakeLock.acquire(10 * 60 * 1000L);
-            LogUtil.d( "WakeLock acquired successfully");
+            wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "StealthRecorder:WakeLock");
+            wakeLock.acquire();
             
-            // 初始化MediaRecorder
+            // 快速初始化MediaRecorder（最小配置）
             mediaRecorder = new MediaRecorder();
-            LogUtil.d( "MediaRecorder created successfully");
-            
             mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
             mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
             mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
-            mediaRecorder.setAudioSamplingRate(22050);
-            mediaRecorder.setAudioEncodingBitRate(64000);
             mediaRecorder.setOutputFile(outputFile);
             
-            LogUtil.d( "MediaRecorder configured");
+            // 准备并开始录音
             mediaRecorder.prepare();
-            LogUtil.d( "MediaRecorder prepared");
-            
             mediaRecorder.start();
-            LogUtil.d( "Recording started: " + outputFile);
-            isRecording = true;
             
-            // 立即检查文件大小
-            File file = new File(outputFile);
-            if (file.exists()) {
-                LogUtil.d( "文件已创建，大小: " + file.length() + " bytes");
-            } else {
-                LogUtil.e( "File not created!");
-            }
+            isRecording = true;
+            long totalTime = System.currentTimeMillis() - startTime;
+            
+            LogUtil.d("✅ Recording started in " + totalTime + "ms: " + outputFile);
+            
+            // 异步检查文件（不阻塞）
+            new Thread(() -> {
+                try {
+                    Thread.sleep(1000); // 等待1秒
+                    File file = new File(outputFile);
+                    if (file.exists()) {
+                        LogUtil.d("📁 File created, size: " + file.length() + " bytes");
+                    }
+                } catch (Exception e) {
+                    // 忽略检查错误
+                }
+            }).start();
             
             return true;
             
         } catch (Exception e) {
-            LogUtil.e( "Failed to start recording", e);
-            e.printStackTrace();
+            LogUtil.e("❌ Failed to start recording", e);
             return false;
         }
     }
     
     @Override
     public void onDestroy() {
-        LogUtil.d( "Service onDestroy");
+        LogUtil.d("Service onDestroy");
         stopRecording();
         
-        // 更新服务状态
+        // 确保状态重置
         isServiceRunning = false;
+        isRecording = false;
         
         super.onDestroy();
+    }
+    
+    @Override
+    public void onTaskRemoved(Intent rootIntent) {
+        super.onTaskRemoved(rootIntent);
+        LogUtil.d("Service onTaskRemoved - app removed from recent tasks");
+        
+        // 应用从最近任务中移除时，确保服务停止
+        isServiceRunning = false;
+        isRecording = false;
+        
+        // 停止服务
+        stopSelf();
     }
     
     // 静态方法供外部检查服务状态
