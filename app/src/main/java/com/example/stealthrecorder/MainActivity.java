@@ -160,8 +160,8 @@ public class MainActivity extends Activity {
     private void openFeedback() {
         Intent intent = new Intent(Intent.ACTION_SENDTO);
         intent.setData(Uri.parse("mailto:liusamye@163.com"));
-        intent.putExtra(Intent.EXTRA_SUBJECT, "Voice Memo Feedback");
-        intent.putExtra(Intent.EXTRA_TEXT, "Please write your feedback, suggestions, or issues here:\n\n");
+        intent.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.feedback_subject));
+        intent.putExtra(Intent.EXTRA_TEXT, getString(R.string.feedback_message));
         try {
             startActivity(Intent.createChooser(intent, getString(R.string.menu_feedback)));
         } catch (Exception e) {
@@ -181,8 +181,8 @@ public class MainActivity extends Activity {
         // 设置关于信息
         String versionName = "1.3";
         String aboutMessage = String.format(getString(R.string.about_version), versionName) + 
-                             "\n\nDeveloper: liusamye" +
-                             "\n\nA simple and efficient background recording app with foldable screen optimization.";
+                             "\n\n" + getString(R.string.about_developer) +
+                             "\n\n" + getString(R.string.about_description);
         
         messageText.setText(aboutMessage);
         
@@ -258,8 +258,8 @@ public class MainActivity extends Activity {
         TextView messageText = settingsView.findViewById(R.id.dialog_message);
         CheckBox dontShowCheckbox = settingsView.findViewById(R.id.dont_show_checkbox);
         
-        messageText.setText("App Settings");
-        dontShowCheckbox.setText("Show recording warning dialog");
+        messageText.setText(getString(R.string.settings_title));
+        dontShowCheckbox.setText(getString(R.string.settings_show_warning));
         
         // 读取当前设置
         SharedPreferences prefs = getSharedPreferences("app_settings", Context.MODE_PRIVATE);
@@ -267,10 +267,10 @@ public class MainActivity extends Activity {
         dontShowCheckbox.setChecked(!dontShowWarning); // 反选：勾选=显示，不勾选=不显示
         
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Settings");
+        builder.setTitle(getString(R.string.settings_title));
         builder.setView(settingsView);
         
-        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+        builder.setPositiveButton(getString(R.string.settings_ok), new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 // 保存用户选择
@@ -280,21 +280,21 @@ public class MainActivity extends Activity {
                 editor.apply();
                 
                 if (showWarning) {
-                    Toast.makeText(MainActivity.this, "Recording warning dialog enabled", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, getString(R.string.settings_warning_enabled), Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(MainActivity.this, "Recording warning dialog disabled", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, getString(R.string.settings_warning_disabled), Toast.LENGTH_SHORT).show();
                 }
             }
         });
         
-        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+        builder.setNegativeButton(getString(R.string.settings_cancel), new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 dialog.dismiss();
             }
         });
         
-        builder.setNeutralButton("System Settings", new DialogInterface.OnClickListener() {
+        builder.setNeutralButton(getString(R.string.settings_system_settings), new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 // 打开系统设置中的应用详情页
@@ -417,7 +417,7 @@ public class MainActivity extends Activity {
             if (fallbackIntent.resolveActivity(getPackageManager()) != null) {
                 try {
                     startActivity(fallbackIntent);
-                    Toast.makeText(this, "Please select the recordings folder in file manager", Toast.LENGTH_LONG).show();
+                    Toast.makeText(this, getString(R.string.open_folder_select), Toast.LENGTH_LONG).show();
                     LogUtil.d("Using method 2 to open file selector");
                     return;
                 } catch (Exception e) {
@@ -428,12 +428,12 @@ public class MainActivity extends Activity {
             // 备用方案：复制路径到剪贴板并提示用户
             try {
                 android.content.ClipboardManager clipboard = (android.content.ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-                android.content.ClipData clip = android.content.ClipData.newPlainText("Recordings Folder Path", folderPath);
+                android.content.ClipData clip = android.content.ClipData.newPlainText(getString(R.string.open_folder_title), folderPath);
                 clipboard.setPrimaryClip(clip);
                 
                 AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                builder.setTitle("Open Recordings Folder")
-                       .setMessage("Folder path copied to clipboard:\n\n" + folderPath + "\n\nPlease open file manager and paste this path.")
+                builder.setTitle(getString(R.string.open_folder_title))
+                       .setMessage(String.format(getString(R.string.open_folder_message), folderPath))
                        .setPositiveButton("OK", null)
                        .show();
                 LogUtil.d("Path copied to clipboard: " + folderPath);
