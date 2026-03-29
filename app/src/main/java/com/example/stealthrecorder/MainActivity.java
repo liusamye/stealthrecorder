@@ -337,53 +337,112 @@ public class MainActivity extends Activity {
                 recordsDir.mkdirs();
             }
             
-            // 方法1：使用最兼容的方式 - 直接发送文件路径给文件管理器
-            // 很多文件管理器支持直接打开文件夹路径
-            Intent intent = new Intent(Intent.ACTION_VIEW);
+            LogUtil.d("尝试打开录音文件夹: " + recordsDir.getAbsolutePath());
             
-            // 构建文件夹URI - 使用最兼容的方式
-            Uri folderUri;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                // Android 7.0+：使用content URI方案
-                // 注意：某些文件管理器可能不支持，但这是最兼容的方式
-                folderUri = Uri.parse("content://com.android.externalstorage.documents/tree/primary:" + 
-                    getString(R.string.recording_folder));
+            // 方法1：使用最可靠的方式 - 发送文件路径给文件管理器
+            // 构建正确的文件夹路径
+            String folderPath = recordsDir.getAbsolutePath();
+            
+            // 尝试多种Intent，确保能打开正确的文件夹
+            
+            // 方法1A：使用标准的文件管理器Intent（最兼容）
+            Intent intent1 = new Intent(Intent.ACTION_VIEW);
+            Uri uri1 = Uri.parse("file://" + folderPath);
+            intent1.setDataAndType(uri1, "resource/folder");
+            
+            // 方法1B：使用DocumentsUI（Android 5.0+）
+            Intent intent2 = new Intent(Intent.ACTION_VIEW);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                // 使用DocumentsContract打开特定目录
+                Uri uri2 = Uri.parse("content://com.android.externalstorage.documents/document/primary:" + 
+                    getString(R.string.recording_folder).replace("/", "%2F"));
+                intent2.setDataAndType(uri2, "vnd.android.document/directory");
             } else {
-                // Android 7.0以下：直接使用文件URI
-                folderUri = Uri.fromFile(recordsDir);
+                intent2.setDataAndType(Uri.fromFile(recordsDir), "resource/folder");
             }
             
-            intent.setDataAndType(folderUri, "resource/folder");
+            // 方法1C：使用系统文件管理器（通用）
+            Intent intent3 = new Intent(Intent.ACTION_VIEW);
+            intent3.setData(Uri.parse("file://" + folderPath));
             
-            // 方法2：备用方案 - 使用文档选择器（最通用）
+            // 方法2：备用方案 - 使用文档选择器
             Intent fallbackIntent = new Intent(Intent.ACTION_GET_CONTENT);
             fallbackIntent.setType("*/*");
             fallbackIntent.addCategory(Intent.CATEGORY_OPENABLE);
             fallbackIntent.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
             
-            // 方法3：备用方案 - 使用系统文件管理器（如果可用）
-            Intent systemFileIntent = new Intent(Intent.ACTION_VIEW);
-            systemFileIntent.setData(Uri.parse("file://" + recordsDir.getAbsolutePath()));
+            // 方法3：备用方案 - 发送路径到剪贴板，让用户手动粘贴
+            Intent clipboardIntent = new Intent(Intent.ACTION_SEND);
+            clipboardIntent.setType("text/plain");
+            clipboardIntent.putExtra(Intent.EXTRA_TEXT, folderPath);
+            clipboardIntent.putExtra(Intent.EXTRA_SUBJECT, "录音文件夹路径");
             
-            // 尝试第一种方法
-            if (intent.resolveActivity(getPackageManager()) != null) {
-                startActivity(intent);
-                Toast.makeText(this, getString(R.string.toast_folder_opened), Toast.LENGTH_SHORT).show();
-            } 
+            // 尝试第一种方法A
+            if (intent1.resolveActivity(getPackageManager()) != null) {
+                try {
+                    startActivity(intent1);
+                    Toast.makeText(this, getString(R.string.toast_folder_opened), Toast.LENGTH_SHORT).show();
+                    LogUtil.d("使用方法1A打开文件夹");
+                    return;
+                } catch (Exception e) {
+                    LogUtil.e("方法1A失败", e);
+                }
+            }
+            
+            // 尝试第一种方法B
+            if (intent2.resolveActivity(getPackageManager()) != null) {
+                try {
+                    startActivity(intent2);
+                    Toast.makeText(this, getString(R.string.toast_folder_opened), Toast.LENGTH_SHORT).show();
+                    LogUtil.d("使用方法1B打开文件夹");
+                    return;
+                } catch (Exception e) {
+                    LogUtil.e("方法1B失败", e);
+                }
+            }
+            
+            // 尝试第一种方法C
+            if (intent3.resolveActivity(getPackageManager()) != null) {
+                try {
+                    startActivity(intent3);
+                    Toast.makeText(this, getString(R.string.toast_folder_opened), Toast.LENGTH_SHORT).show();
+                    LogUtil.d("使用方法1C打开文件夹");
+                    return;
+                } catch (Exception e) {
+                    LogUtil.e("方法1C失败", e);
+                }
+            }
+            
             // 尝试第二种方法
-            else if (fallbackIntent.resolveActivity(getPackageManager()) != null) {
-                startActivity(fallbackIntent);
-                Toast.makeText(this, getString(R.string.toast_folder_opened), Toast.LENGTH_SHORT).show();
+            if (fallbackIntent.resolveActivity(getPackageManager()) != null) {
+                try {
+                    startActivity(fallbackIntent);
+                    Toast.makeText(this, "请在文件管理器中选择录音文件夹", Toast.LENGTH_LONG).show();
+                    LogUtil.d("使用方法2打开文件选择器");
+                    return;
+                } catch (Exception e) {
+                    LogUtil.e("方法2失败", e);
+                }
             }
-            // 尝试第三种方法
-            else if (systemFileIntent.resolveActivity(getPackageManager()) != null) {
-                startActivity(systemFileIntent);
-                Toast.makeText(this, getString(R.string.toast_folder_opened), Toast.LENGTH_SHORT).show();
+            
+            // 备用方案：复制路径到剪贴板并提示用户
+            try {
+                android.content.ClipboardManager clipboard = (android.content.ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                android.content.ClipData clip = android.content.ClipData.newPlainText("录音文件夹路径", folderPath);
+                clipboard.setPrimaryClip(clip);
+                
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setTitle("打开录音文件夹")
+                       .setMessage("已复制文件夹路径到剪贴板:\n\n" + folderPath + "\n\n请打开文件管理器并粘贴此路径。")
+                       .setPositiveButton("确定", null)
+                       .show();
+                LogUtil.d("已复制路径到剪贴板: " + folderPath);
+            } catch (Exception e) {
+                // 最后手段：显示路径
+                Toast.makeText(this, getString(R.string.file_info_saved, folderPath), Toast.LENGTH_LONG).show();
+                LogUtil.d("显示路径: " + folderPath);
             }
-            // 备用方案：显示路径
-            else {
-                Toast.makeText(this, getString(R.string.file_info_saved, recordsDir.getAbsolutePath()), Toast.LENGTH_LONG).show();
-            }
+            
         } catch (Exception e) {
             Toast.makeText(this, getString(R.string.toast_folder_failed), Toast.LENGTH_SHORT).show();
             LogUtil.e("打开文件夹失败", e);

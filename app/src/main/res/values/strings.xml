@@ -67,7 +67,7 @@
     
     <!-- 文件信息 -->
     <string name="file_saved_successfully">File saved successfully</string>
-    <string name="recording_folder">Recordings</string>
+    <string name="recording_folder">VoiceMemos</string>
     <string name="file_name_format">Note_%s.m4a</string>
     
     <!-- 设置页面 -->
